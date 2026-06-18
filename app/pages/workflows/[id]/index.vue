@@ -2651,9 +2651,9 @@ async function loadTestHistory() {
 async function reconcileStalePendingJobs() { return }
 // Local-only patch (đợi sync round-trip BE thì lag) — engine cũng tự lưu BE qua emit.
 function persistTestHistory() {
-  try {
-    localStorage.setItem(`wf:test:${route.params.id}`, JSON.stringify(testHistory.value))
-  } catch { /* quota exceeded — silent */ }
+  // ALD 18/06/2026 - No-op: run đã lưu ở workflow_runs (local db, đã cap quota). Không ghi bản sao
+  // wf:test:<id> nữa (thừa + tốn quota). Dọn key cũ nếu còn.
+  try { localStorage.removeItem(`wf:test:${route.params.id}`) } catch {}
 }
 // ALD 24/05/2026 - Xoá 1 run riêng lẻ. Confirm trước khi delete BE + remove khỏi list.
 // ALD 27/05/2026 - Chỉ gọi BE khi entry có _runId (UUID workflow_runs.id).

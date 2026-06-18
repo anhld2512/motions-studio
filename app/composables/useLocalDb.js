@@ -57,10 +57,41 @@ export function useLocalDb() {
   const isNeon = () => { _load(); return cfg.value.mode === 'neon' && !!cfg.value.url && cfg.value.synced }
 
   // ── localStorage backend ──
+  const MAX_RUNS = 30   // chỉ giữ N run gần nhất trong localStorage (tránh phình quota)
   function _lsAll(coll) {
     try { return JSON.parse(localStorage.getItem(LS_COLL + coll) || '[]') } catch { return [] }
   }
-  function _lsWrite(coll, rows) { localStorage.setItem(LS_COLL + coll, JSON.stringify(rows)) }
+  const _byNewest = (a, b) => String(b?.created_at || '').localeCompare(String(a?.created_at || ''))
+  // Bỏ field nặng khỏi run (giữ lại preview ref nhẹ idb://… / URL) để cứu quota.
+  function _slimRun(r) {
+    const meta = r.output?.metadata || {}
+    const slimMeta = { image: meta.image, images: meta.images, video: meta.video, audio: meta.audio, text: typeof meta.text === 'string' ? meta.text.slice(0, 2000) : meta.text }
+    return { ...r, definition: undefined, events: (r.events || []).slice(-8).map((e) => ({ ts: e.ts, level: e.level, msg: e.msg })), output: { ...(r.output || {}), metadata: slimMeta } }
+  }
+  function _lsWrite(coll, rows) {
+    // Cap số run mới nhất trước khi ghi.
+    let data = rows
+    if (coll === 'workflow_runs') data = rows.slice().sort(_byNewest).slice(0, MAX_RUNS)
+    try {
+      localStorage.setItem(LS_COLL + coll, JSON.stringify(data))
+      return
+    } catch (err) {
+      if (coll !== 'workflow_runs') throw err
+      // Quota: thử các mức cứu dần — slim run cũ → cắt còn ít run → slim hết.
+      const sorted = data.slice().sort(_byNewest)
+      const attempts = [
+        sorted.map((r, i) => (i < 5 ? r : _slimRun(r))),
+        sorted.slice(0, 12).map((r, i) => (i < 3 ? r : _slimRun(r))),
+        sorted.slice(0, 6).map(_slimRun),
+        sorted.slice(0, 3).map(_slimRun)
+      ]
+      for (const att of attempts) {
+        try { localStorage.setItem(LS_COLL + coll, JSON.stringify(att)); return } catch { /* thử mức nhỏ hơn */ }
+      }
+      // Bó tay: xoá sạch run để app không kẹt (file output vẫn nằm IndexedDB).
+      try { localStorage.setItem(LS_COLL + coll, '[]') } catch {}
+    }
+  }
 
   // ── public API (async, dispatch theo mode) ──
   async function list(coll) {
