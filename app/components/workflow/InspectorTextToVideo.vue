@@ -3,13 +3,13 @@
   <div class="space-y-4">
     <ProviderBadge capability="video" />
     <div>
-      <label class="ins-label">Mô tả video (prompt)</label>
+      <label class="ins-label">{{ t('inspector.textToVideo.promptLabel') }}</label>
       <textarea v-model="local.prompt" rows="5" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: một clip điện ảnh quay flycam khu công nghiệp lúc bình minh, ánh sáng vàng" />
-      <p class="ins-hint">Sinh video thẳng từ mô tả (không cần ảnh).</p>
+        :placeholder="t('inspector.textToVideo.promptPlaceholder')" />
+      <p class="ins-hint">{{ t('inspector.textToVideo.promptHint') }}</p>
     </div>
     <div>
-      <label class="ins-label">Tỉ lệ khung</label>
+      <label class="ins-label">{{ t('inspector.textToVideo.aspectRatioLabel') }}</label>
       <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
     </div>
   </div>
@@ -19,7 +19,8 @@
 <script setup>
 const props = defineProps({ config: { type: Object, default: () => ({}) }, nodeType: { type: String, default: 'text-to-video' } })
 const emit = defineEmits(['update:config'])
-const ASPECTS = [{ value: '16:9', label: 'Ngang 16:9' }, { value: '9:16', label: 'Dọc 9:16' }, { value: '1:1', label: 'Vuông 1:1' }]
+const { t } = useI18n()
+const ASPECTS = computed(() => [{ value: '16:9', label: t('inspector.textToVideo.aspect.horizontal') }, { value: '9:16', label: t('inspector.textToVideo.aspect.vertical') }, { value: '1:1', label: t('inspector.textToVideo.aspect.square') }])
 const local = ref({ prompt: '', aspectRatio: '16:9', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 watch(() => props.config, (v) => { if (v && JSON.stringify(v) !== JSON.stringify(local.value)) local.value = { ...local.value, ...v } })

@@ -54,7 +54,7 @@
           @click="onNewWorkflow"
         >
           <i class="bi bi-plus-circle" />
-          Workflow mới
+          {{ t('Workflow mới', 'New workflow') }}
         </button>
       </div>
 
@@ -73,7 +73,7 @@
           @click="sidebarOpen = false"
         >
           <i :class="['bi text-base flex-shrink-0', item.icon]" />
-          <span class="flex-1 truncate">{{ item.label }}</span>
+          <span class="flex-1 truncate">{{ lang === 'en' ? item.en : item.label }}</span>
           <i v-if="isActive(item.to)" class="bi bi-chevron-right text-xs text-gray-400" />
         </NuxtLink>
       </nav>
@@ -115,7 +115,7 @@
               @click="userMenuOpen = false; sidebarOpen = false"
             >
               <i class="bi bi-gear text-base" />
-              Cài đặt
+              {{ t('Cài đặt', 'Settings') }}
             </NuxtLink>
             <button
               type="button"
@@ -123,7 +123,7 @@
               @click="onLogout"
             >
               <i class="bi bi-box-arrow-right text-base" />
-              Đăng xuất
+              {{ t('Đăng xuất', 'Log out') }}
             </button>
           </div>
         </Transition>
@@ -152,6 +152,17 @@
           </p>
         </div>
 
+        <!-- ALD 18/06/2026 - Nút đổi ngôn ngữ VI ⇄ EN (lưu localStorage). -->
+        <button
+          type="button"
+          class="h-10 px-3 flex items-center gap-1.5 rounded-2xl glass shadow-card press hover:bg-white transition-colors flex-shrink-0 font-bold text-[13px] text-gray-700"
+          :title="lang === 'vi' ? 'Switch to English' : 'Chuyển sang tiếng Việt'"
+          @click="toggle"
+        >
+          <i class="bi bi-translate text-base text-primary" />
+          <span>{{ lang === 'vi' ? 'VI' : 'EN' }}</span>
+        </button>
+
         <!-- ALD 25/05/2026 - Notification bell, hiển thị mọi page. -->
         <NotificationBell />
       </header>
@@ -170,17 +181,18 @@ import { useStorage } from '@vueuse/core'
 const route = useRoute()
 const appConfig = useAppConfig()
 const auth = useAuth()
+const { lang, t, toggle } = useLang()
 
 // Sidebar default closed; persist user choice qua reload
 const sidebarOpen = useStorage('motions_sidebar_open', false)
 
 // ALD 18/06/2026 - motions-studio FE-only: nav gọn — Tổng quan / Workflows / Cài đặt.
 const navItems = [
-  { to: '/',          icon: 'bi-house-door', label: 'Tổng quan' },
-  { to: '/workflows', icon: 'bi-diagram-3',  label: 'Workflows' },
-  { to: '/monitor',   icon: 'bi-activity',   label: 'Giám sát' },
-  { to: '/reports',   icon: 'bi-bar-chart',  label: 'Báo cáo' },
-  { to: '/settings',  icon: 'bi-sliders',    label: 'Cài đặt' }
+  { to: '/',          icon: 'bi-house-door', label: 'Tổng quan', en: 'Overview' },
+  { to: '/workflows', icon: 'bi-diagram-3',  label: 'Workflows', en: 'Workflows' },
+  { to: '/monitor',   icon: 'bi-activity',   label: 'Giám sát',  en: 'Monitor' },
+  { to: '/reports',   icon: 'bi-bar-chart',  label: 'Báo cáo',   en: 'Reports' },
+  { to: '/settings',  icon: 'bi-sliders',    label: 'Cài đặt',   en: 'Settings' }
 ]
 
 const visibleNavItems = computed(() => navItems)
@@ -196,24 +208,20 @@ const pageTitle = computed(() => {
   const meta = route.meta?.title
   if (meta) return meta
   const item = visibleNavItems.value.find((n) => isActive(n.to))
-  if (item && item.to !== '/') return item.label
-  if (route.path.startsWith('/workflows/')) return 'Workflow editor'
-  return 'Motion Transfer Pipeline'
+  if (item && item.to !== '/') return lang.value === 'en' ? item.en : item.label
+  if (route.path.startsWith('/workflows/')) return t('Trình tạo workflow', 'Workflow editor')
+  return 'Motions Studio'
 })
 
 const pageSubtitle = computed(() => {
   const sub = route.meta?.subtitle
   if (sub) return sub
-  if (route.path === '/')           return 'Quản lý workflows motion-video'
-  if (route.path === '/marketing')  return 'Sản phẩm + người mẫu + kịch bản → video TTS lip-sync'
-  if (route.path === '/workflows')  return 'Tất cả workflows'
-  if (route.path === '/audio')      return 'Thư viện audio (mp3/wav/m4a/ogg/flac)'
-  if (route.path === '/runs')       return 'Lịch sử lần chạy'
-  if (route.path === '/storage')    return 'File ảnh / video / output'
-  if (route.path === '/reports')    return 'Báo cáo chất lượng AI — token / timing / output'
-  if (route.path === '/admin/vps')  return 'Theo dõi tải VPS realtime và giải phóng tài nguyên'
-  if (route.path === '/settings')   return 'Tài khoản & cấu hình'
-  if (route.path.startsWith('/workflows/')) return 'Thiết kế graph'
+  if (route.path === '/')           return t('Quản lý workflows AI', 'Manage AI workflows')
+  if (route.path === '/workflows')  return t('Tất cả workflows', 'All workflows')
+  if (route.path === '/monitor')    return t('Job đang chạy', 'Live jobs')
+  if (route.path === '/reports')    return t('Tổng quan hoạt động', 'Activity overview')
+  if (route.path === '/settings')   return t('Provider & dữ liệu', 'Providers & data')
+  if (route.path.startsWith('/workflows/')) return t('Thiết kế graph', 'Design graph')
   return ''
 })
 // #endregion

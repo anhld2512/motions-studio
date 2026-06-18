@@ -5,8 +5,8 @@
     <button type="button" :class="['pb-head', bound ? 'is-on' : 'is-off']" @click="open = !open">
       <span :class="['pb-ico', bound ? 'on' : 'off']"><i :class="['bi', bound ? 'bi-plug-fill' : 'bi-plug']" /></span>
       <span class="pb-txt">
-        <span class="pb-title"><span class="pb-cap">{{ capLabel }}:</span> {{ bound ? bound.name : 'chưa gắn provider' }}<span v-if="bound && curModel" class="pb-model"> · {{ curModel }}</span></span>
-        <span class="pb-sub">{{ bound ? 'Bấm để đổi provider / model' : 'Bấm để gắn provider cho node này' }}</span>
+        <span class="pb-title"><span class="pb-cap">{{ capLabel }}:</span> {{ bound ? bound.name : t('providerBadge.noProvider') }}<span v-if="bound && curModel" class="pb-model"> · {{ curModel }}</span></span>
+        <span class="pb-sub">{{ bound ? t('providerBadge.subChange') : t('providerBadge.subBind') }}</span>
       </span>
       <i :class="['bi pb-chev', open ? 'bi-chevron-up' : 'bi-chevron-down']" />
     </button>
@@ -14,42 +14,41 @@
     <div v-if="open" class="pb-body">
       <!-- Chọn provider có sẵn -->
       <template v-if="providers.length && mode !== 'new'">
-        <label class="pb-label">Provider</label>
-        <UiDropdown :model-value="binding?.providerId || ''" :options="providerOptions" icon="bi-plug" placeholder="Chọn provider" full-width @update:model-value="bindProvider" />
+        <label class="pb-label">{{ t('providerBadge.provider') }}</label>
+        <UiDropdown :model-value="binding?.providerId || ''" :options="providerOptions" icon="bi-plug" :placeholder="t('providerBadge.pickProvider')" full-width @update:model-value="bindProvider" />
 
         <template v-if="bound">
-          <label class="pb-label mt-2">Model <span class="pb-cap font-normal normal-case">(bấm chọn hoặc tự gõ)</span></label>
-          <div v-if="allModels.length" class="pb-chips">
-            <button v-for="m in allModels" :key="m" type="button" :class="['pb-chip', curModel === m && 'is-active']" :title="MODEL_NOTE[m]" @click="setModel(m)">{{ MODEL_NOTE[m] || m }}</button>
-          </div>
-          <input :value="curModel" type="text" class="pb-input mt-1.5 font-mono text-[12px]"
-            placeholder="hoặc gõ model id…" @change="setModel($event.target.value)" />
+          <label class="pb-label mt-2">{{ t('providerBadge.model') }} <span class="pb-cap font-normal normal-case">{{ t('providerBadge.modelHint') }}</span></label>
+          <UiDropdown :model-value="modelDropdownValue" :options="modelOptions" icon="bi-box" :placeholder="t('providerBadge.pickModel')" full-width no-clear @update:model-value="onPickModel" />
+          <input v-if="customMode" :value="curModel" type="text" class="pb-input mt-1.5 font-mono text-[12px]"
+            :placeholder="t('providerBadge.modelIdPlaceholder')" autofocus @change="setModel($event.target.value)" />
         </template>
 
-        <button type="button" class="pb-add" @click="startNew"><i class="bi bi-plus-lg me-1" />Provider mới (tự lưu vào Cài đặt)</button>
+        <button type="button" class="pb-add" @click="startNew"><i class="bi bi-plus-lg me-1" />{{ t('providerBadge.newProvider') }}</button>
       </template>
 
       <!-- Thêm provider mới ngay tại node -->
       <template v-else>
-        <label class="pb-label">Nhà cung cấp (có sẵn base URL)</label>
+        <label class="pb-label">{{ t('providerBadge.vendor') }}</label>
         <UiDropdown :model-value="form.kind" :options="kindOptions" icon="bi-grid" full-width no-clear @update:model-value="onKind" />
-        <input v-model="form.name" type="text" class="pb-input mt-1.5" placeholder="Tên (vd OpenAI prod)" />
+        <input v-model="form.name" type="text" class="pb-input mt-1.5" :placeholder="t('providerBadge.namePlaceholder')" />
         <input v-model="form.baseUrl" type="text" class="pb-input mt-1.5 font-mono text-[12px]" placeholder="https://…" />
-        <input v-model="form.apiKey" type="password" class="pb-input mt-1.5 font-mono text-[12px]" placeholder="API key (mã hoá khi lưu)" autocomplete="off" />
-        <p v-if="formModelsHint" class="pb-hint"><i class="bi bi-info-circle me-1" />Model: {{ formModelsHint }}</p>
+        <input v-model="form.apiKey" type="password" class="pb-input mt-1.5 font-mono text-[12px]" :placeholder="t('providerBadge.apiKeyPlaceholder')" autocomplete="off" />
+        <p v-if="formModelsHint" class="pb-hint"><i class="bi bi-info-circle me-1" />{{ t('providerBadge.modelLabel', { models: formModelsHint }) }}</p>
         <div class="flex gap-2 mt-2">
-          <button type="button" class="pb-save" :disabled="saving || !form.apiKey" @click="saveNew">{{ saving ? 'Đang lưu…' : 'Lưu & gắn vào node' }}</button>
-          <button v-if="providers.length" type="button" class="pb-cancel" @click="mode = 'pick'">Huỷ</button>
+          <button type="button" class="pb-save" :disabled="saving || !form.apiKey" @click="saveNew">{{ saving ? t('providerBadge.saving') : t('providerBadge.saveAndBind') }}</button>
+          <button v-if="providers.length" type="button" class="pb-cancel" @click="mode = 'pick'">{{ t('providerBadge.cancel') }}</button>
         </div>
       </template>
 
-      <NuxtLink to="/settings?tab=provider" class="pb-settings"><i class="bi bi-gear me-1" />Quản lý tất cả ở Cài đặt → Provider</NuxtLink>
+      <NuxtLink to="/settings?tab=provider" class="pb-settings"><i class="bi bi-gear me-1" />{{ t('providerBadge.manageAll') }}</NuxtLink>
     </div>
   </div>
   <!-- #endregion -->
 </template>
 
 <script setup>
+const { t } = useI18n()
 const props = defineProps({ capability: { type: String, required: true } })
 const prov = useProviders()
 const { providers, bindings, PROVIDER_KINDS } = prov
@@ -72,6 +71,21 @@ const providerOptions = computed(() => providers.value
   .filter((p) => (prov.suggestedModels(p.kind, props.capability).length) || (p.models && p.models[props.capability]) || p.kind === 'custom')
   .map((p) => ({ value: p.id, label: p.name })))
 const allModels = computed(() => bound.value ? prov.suggestedModels(bound.value.kind, props.capability) : [])
+
+// Model = dropdown (nhãn thân thiện vd "Nano Banana Pro") + tuỳ chọn "Tự nhập…".
+const customMode = ref(false)
+const modelOptions = computed(() => {
+  const opts = allModels.value.map((m) => ({ value: m, label: MODEL_NOTE[m] || m }))
+  if (curModel.value && !allModels.value.includes(curModel.value)) opts.unshift({ value: curModel.value, label: t('providerBadge.customModelOption', { model: MODEL_NOTE[curModel.value] || curModel.value }) })
+  opts.push({ value: '__custom__', label: t('providerBadge.enterCustomModel') })
+  return opts
+})
+const modelDropdownValue = computed(() => customMode.value ? '__custom__' : (curModel.value || ''))
+function onPickModel(v) {
+  if (v === '__custom__') { customMode.value = true; return }
+  customMode.value = false
+  setModel(v)
+}
 
 const kindOptions = PROVIDER_KINDS.map((k) => ({ value: k.id, label: k.label }))
 const formModelsHint = computed(() => (PROVIDER_KINDS.find((k) => k.id === form.kind)?.models?.[props.capability] || []).slice(0, 4).join(', '))

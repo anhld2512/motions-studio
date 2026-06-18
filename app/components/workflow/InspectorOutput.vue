@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-3">
     <div>
-      <label class="apl-label">Format trả về end user</label>
+      <label class="apl-label">{{ t('inspector.output.format') }}</label>
       <div class="apl-segmented mt-1.5">
         <button
           v-for="f in formats"
@@ -30,20 +30,21 @@
 <script setup>
 const props = defineProps({ config: { type: Object, required: true } })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 
-const formats = [
-  { id: 'markdown', label: 'Markdown', icon: 'bi-markdown', desc: 'Chat render markdown (bảng, code, list). Default — phù hợp hầu hết case.' },
-  { id: 'text',     label: 'Text',     icon: 'bi-text-paragraph', desc: 'Plain text monospace, không format. Cho output raw từ LLM/HTTP.' },
-  { id: 'json',     label: 'JSON',     icon: 'bi-braces',  desc: 'Parse text → JSON object trong metadata.parsed. Chat render syntax highlight + UI để inspect.' },
-  { id: 'video',    label: 'Video',    icon: 'bi-film',    desc: 'Render player MP4 inline (output.video URL). Cho Motion / Fashion Motion.' },
-  { id: 'image',    label: 'Image',    icon: 'bi-image',   desc: 'Render ảnh preview (output.image URL). Cho Image generation nodes.' },
-  { id: 'file',     label: 'File',     icon: 'bi-file-earmark-arrow-down', desc: 'Trả file download cho user (nếu prev node có .file).' }
-]
+const formats = computed(() => [
+  { id: 'markdown', label: 'Markdown', icon: 'bi-markdown', desc: t('inspector.output.descMarkdown') },
+  { id: 'text',     label: 'Text',     icon: 'bi-text-paragraph', desc: t('inspector.output.descText') },
+  { id: 'json',     label: 'JSON',     icon: 'bi-braces',  desc: t('inspector.output.descJson') },
+  { id: 'video',    label: 'Video',    icon: 'bi-film',    desc: t('inspector.output.descVideo') },
+  { id: 'image',    label: 'Image',    icon: 'bi-image',   desc: t('inspector.output.descImage') },
+  { id: 'file',     label: 'File',     icon: 'bi-file-earmark-arrow-down', desc: t('inspector.output.descFile') }
+])
 
 const local = reactive({ format: props.config.format || 'markdown', cleanup: props.config.cleanup ?? false })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 
-const activeFormat = computed(() => formats.find((f) => f.id === local.format) || formats[0])
+const activeFormat = computed(() => formats.value.find((f) => f.id === local.format) || formats.value[0])
 </script>
 
 <style scoped>

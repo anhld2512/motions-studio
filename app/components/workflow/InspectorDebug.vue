@@ -7,7 +7,7 @@
         v-model="local.label"
         type="text"
         class="apl-dbg-input"
-        placeholder="Tên debug step"
+        :placeholder="t('debug.labelPlaceholder')"
       />
     </div>
 
@@ -28,7 +28,7 @@
     <!-- RESULT — latest capture preview -->
     <div class="apl-dbg-section">
       <div class="apl-dbg-section-header">
-        <span><i class="bi bi-eye me-1" /> Kết quả</span>
+        <span><i class="bi bi-eye me-1" /> {{ t('debug.result') }}</span>
         <span v-if="captureSize" class="apl-dbg-meta">{{ captureSize }}</span>
       </div>
       <div class="apl-dbg-preview">
@@ -46,7 +46,7 @@
         <pre v-else-if="resultText" class="apl-dbg-pre">{{ resultText }}</pre>
         <div v-else class="apl-dbg-empty">
           <i class="bi bi-hourglass-split" />
-          <span>Chưa có kết quả — chạy workflow để xem</span>
+          <span>{{ t('debug.emptyResult') }}</span>
         </div>
       </div>
       <div v-if="resultMeta.length" class="apl-dbg-kvs">
@@ -66,7 +66,7 @@
       <div class="apl-dbg-log">
         <div v-if="!events.length" class="apl-dbg-empty py-3">
           <i class="bi bi-circle" />
-          <span>Empty — log sẽ điền sau khi run</span>
+          <span>{{ t('debug.emptyLog') }}</span>
         </div>
         <div v-for="(ev, i) in events.slice(-8)" :key="i" :class="['apl-dbg-log-row', `lvl-${ev.level}`]">
           <span class="apl-dbg-log-time">{{ fmtTime(ev.ts) }}</span>
@@ -93,6 +93,7 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const props = defineProps({
   config: { type: Object, required: true },
   nodeType: { type: String, default: 'debug' },
@@ -119,10 +120,12 @@ const TOGGLES = [
 
 // ─── RESULT: đọc từ runtime ─────────────────────────────────────────────
 // runtime shape mong đợi: { output: NodeOutput, events: [{ts, level, msg, extra}], durationMs }
+const fileStore = useFileStore(); fileStore.load()
+const msrc = (u) => fileStore.mediaSrc(u)
 const out = computed(() => props.runtime?.output || {})
 const meta = computed(() => out.value?.metadata || {})
-const resultVideo = computed(() => meta.value.video || (out.value?.file?.mimeType?.startsWith('video/') ? buildDataUrl(out.value.file) : ''))
-const resultImage = computed(() => meta.value.image || (out.value?.file?.mimeType?.startsWith('image/') ? buildDataUrl(out.value.file) : ''))
+const resultVideo = computed(() => msrc(meta.value.video) || (out.value?.file?.mimeType?.startsWith('video/') ? buildDataUrl(out.value.file) : ''))
+const resultImage = computed(() => msrc(meta.value.image) || (out.value?.file?.mimeType?.startsWith('image/') ? buildDataUrl(out.value.file) : ''))
 const resultAudio = computed(() => out.value?.file?.mimeType?.startsWith('audio/') ? buildDataUrl(out.value.file) : '')
 const resultText  = computed(() => out.value?.text && !meta.value.video && !meta.value.image ? out.value.text.slice(0, 800) : '')
 function buildDataUrl(f) { return f?.data ? `data:${f.mimeType};base64,${f.data}` : '' }
@@ -136,7 +139,8 @@ const previewGrid = computed(() => {
     { key: 'product', label: 'Product', url: m.product_url },
     { key: 'mask',    label: 'Mask',    url: m.mask_url },
     { key: 'tryon',   label: 'Try-on',  url: m.tryon_url || m.image },
-  ].filter((x) => x.url && typeof x.url === 'string' && x.url.startsWith('http'))
+  ].filter((x) => x.url && typeof x.url === 'string' && (x.url.startsWith('http') || x.url.startsWith('idb://')))
+   .map((x) => ({ ...x, url: msrc(x.url) }))
   return items
 })
 

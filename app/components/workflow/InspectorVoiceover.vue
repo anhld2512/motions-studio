@@ -3,17 +3,17 @@
   <div class="space-y-4">
     <ProviderBadge capability="speech" />
     <div>
-      <label class="ins-label">Lời thuyết minh</label>
+      <label class="ins-label">{{ t('inspector.voiceover.scriptLabel') }}</label>
       <textarea v-model="local.script" rows="4" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="Nhập lời đọc cho video…" />
+        :placeholder="t('inspector.voiceover.scriptPlaceholder')" />
     </div>
     <div>
-      <label class="ins-label">Giọng (voice id của provider)</label>
+      <label class="ins-label">{{ t('inspector.voiceover.voiceLabel') }}</label>
       <div class="flex flex-wrap gap-1.5 mt-1.5">
         <button v-for="v in VOICE_PRESETS" :key="v" type="button" :class="['ins-chip', local.voice === v && 'is-active']" @click="local.voice = v">{{ v }}</button>
       </div>
-      <input v-model="local.voice" type="text" class="ins-input mt-2 w-full font-mono text-[13px]" placeholder="vd alloy · Kore · <elevenlabs voice_id>" />
-      <p class="ins-hint">OpenAI <code>alloy/nova…</code> · Gemini <code>Kore/Puck…</code> · Clone giọng: ElevenLabs (dán voice_id).</p>
+      <input v-model="local.voice" type="text" class="ins-input mt-2 w-full font-mono text-[13px]" :placeholder="t('inspector.voiceover.voicePlaceholder')" />
+      <p class="ins-hint">OpenAI <code>alloy/nova…</code> · Gemini <code>Kore/Puck…</code> · {{ t('inspector.voiceover.voiceHint') }}</p>
     </div>
   </div>
   <!-- #endregion -->
@@ -22,6 +22,7 @@
 <script setup>
 const props = defineProps({ config: { type: Object, default: () => ({}) }, nodeType: { type: String, default: 'voiceover' } })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 const VOICE_PRESETS = ['alloy', 'nova', 'shimmer', 'Kore', 'Puck', 'Aoede']
 const local = ref({ script: '', voice: 'alloy', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })

@@ -7,7 +7,7 @@
       <i v-if="icon" :class="['bi', icon, accentTextClass]" />
       {{ label }}
       <span v-if="optional" class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide ml-1">
-        · tùy chọn
+        · {{ t('upload.optional') }}
       </span>
     </label>
     <div
@@ -44,7 +44,7 @@
           'text-[11px] font-semibold mt-1',
           dragging ? accentTextClass : 'text-gray-600'
         ]">
-          {{ dragging ? 'Thả để upload' : 'Click hoặc kéo file vào' }}
+          {{ dragging ? t('upload.dropToUpload') : t('upload.clickOrDrag') }}
         </p>
         <p v-if="!dragging && hint" class="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{{ hint }}</p>
       </div>
@@ -74,7 +74,7 @@
           <button
             type="button"
             class="press h-7 w-7 flex items-center justify-center rounded-full bg-black/40 hover:bg-rose-500 text-white backdrop-blur transition-colors"
-            title="Xoá"
+            :title="t('upload.remove')"
             @click.stop.prevent="clear"
           >
             <i class="bi bi-x text-sm" />
@@ -91,6 +91,7 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const props = defineProps({
   modelValue: { type: File, default: null },
   label:       { type: String,  default: 'Upload file' },

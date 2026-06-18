@@ -20,7 +20,7 @@
       </div>
       <div class="apl-search-wrap">
         <i class="bi bi-search apl-search-icon" />
-        <input v-model="paletteSearch" type="text" placeholder="Tìm node" class="apl-search-input" />
+        <input v-model="paletteSearch" type="text" :placeholder="t('editor.searchNode')" class="apl-search-input" />
       </div>
       <div class="apl-palette">
         <div v-for="cat in filteredCategories" :key="cat.id" class="apl-cat">
@@ -37,22 +37,22 @@
                 <i :class="['bi', t.icon]" />
               </span>
               <div class="apl-palette-text">
-                <span class="apl-palette-label">{{ t.label }}</span>
+                <span class="apl-palette-label">{{ uiLang === 'en' ? t.label : (NODE_VI[t.id] || t.label) }}<span v-if="NODE_VI[t.id] && NODE_VI[t.id] !== t.label" class="apl-palette-en">{{ uiLang === 'en' ? NODE_VI[t.id] : t.label }}</span></span>
                 <span class="apl-palette-hint">{{ t.hint }}</span>
               </div>
             </div>
           </div>
         </div>
-        <p v-if="filteredCategories.length === 0" class="apl-empty">Không có node khớp</p>
+        <p v-if="filteredCategories.length === 0" class="apl-empty">{{ t('editor.noNodeMatch') }}</p>
       </div>
       <div class="apl-sidebar-footer">
         <template v-if="isOwned">
-          <kbd class="apl-kbd">⌘S</kbd> Lưu
+          <kbd class="apl-kbd">⌘S</kbd> {{ t('editor.save') }}
           <span class="mx-1.5 text-slate-300">·</span>
         </template>
-        <kbd class="apl-kbd">⌘A</kbd> Chọn tất
+        <kbd class="apl-kbd">⌘A</kbd> {{ t('editor.selectAll') }}
         <span class="mx-1.5 text-slate-300">·</span>
-        <kbd class="apl-kbd">⌫</kbd> Xoá
+        <kbd class="apl-kbd">⌫</kbd> {{ t('editor.delete') }}
       </div>
     </aside>
 
@@ -71,14 +71,14 @@
         <div class="apl-actions">
           <!-- Secondary group: Lịch sử + Runs drawer -->
           <div class="apl-action-group">
-            <NuxtLink :to="`/workflows/${route.params.id}/runs`" class="apl-icon-btn" title="Lịch sử run">
+            <NuxtLink :to="`/workflows/${route.params.id}/runs`" class="apl-icon-btn" :title="t('editor.runHistory')">
               <i class="bi bi-clock-history" />
             </NuxtLink>
             <button
               v-if="testHistory.length > 0 || testRunning"
               type="button"
               :class="['apl-icon-btn', drawerVisible && 'is-active']"
-              :title="drawerVisible ? 'Ẩn runs' : 'Hiện runs'"
+              :title="drawerVisible ? t('editor.hideRuns') : t('editor.showRuns')"
               @click="drawerVisible = !drawerVisible"
             >
               <i class="bi bi-list-ul" />
@@ -92,7 +92,7 @@
               v-if="isOwned && !isViewingHistory"
               type="button"
               class="apl-icon-btn"
-              title="Dựng pipeline Time-lapse BĐS (tự sinh node theo số công đoạn)"
+              :title="t('editor.buildBdsPipelineTooltip')"
               @click="bdsGenOpen = true"
             >
               <i class="bi bi-buildings" />
@@ -109,11 +109,11 @@
             type="button"
             :disabled="!dirty || saving"
             :class="['apl-cta apl-cta-secondary', (!dirty || saving) && 'is-disabled']"
-            :title="dirty ? 'Lưu thay đổi (⌘S)' : 'Không có thay đổi'"
+            :title="dirty ? t('editor.saveChanges') : t('editor.noChanges')"
             @click="onSave"
           >
             <i :class="['bi', saving ? 'bi-arrow-repeat animate-spin' : 'bi-cloud-arrow-up']" />
-            <span>Lưu</span>
+            <span>{{ t('editor.save') }}</span>
           </button>
           <!-- ALD 12/06/2026 - HAI nút TÁCH BIỆT (chốt theo feedback):
                (1) "Phiên mới" = về trang soạn thảo trống để nhập prompt mới, TUYỆT ĐỐI KHÔNG tự chạy.
@@ -121,26 +121,23 @@
           <button
             type="button"
             class="apl-cta apl-cta-secondary"
-            title="Mở phiên soạn thảo mới (nhập prompt mới) — KHÔNG chạy gì"
+            :title="t('editor.newSessionTooltip')"
             @click="newBlankSession"
           >
             <i class="bi bi-plus-lg" />
-            <span>Phiên mới</span>
+            <span>{{ t('editor.newSession') }}</span>
           </button>
           <!-- ALD 12/06/2026 - nút LUÔN là hành động "Chạy workflow" (KHÔNG hiện "Đang xử lý" của job cũ —
                processing là của TAB run riêng, không phải của nút này). Đang có run khác vẫn bấm chạy thêm
                (song song); chỉ chặn khi đụng trần. -->
           <button
             type="button"
-            :disabled="runningCount >= MAX_CONCURRENT_RUNS"
             class="apl-cta apl-cta-primary"
-            :title="runningCount >= MAX_CONCURRENT_RUNS
-              ? `Tối đa ${MAX_CONCURRENT_RUNS} run song song — đợi bớt hoặc cancel`
-              : 'Chạy workflow (tạo run mới)'"
+            :title="t('editor.runWorkflowTooltip')"
             @click="openTestRun"
           >
             <i class="bi bi-play-fill" />
-            <span>Chạy workflow</span>
+            <span>{{ t('editor.runWorkflow') }}</span>
           </button>
         </div>
       </div>
@@ -152,28 +149,28 @@
         <button
           type="button"
           :class="['apl-runtab', !selectedRunId && 'is-active']"
-          title="Trang soạn thảo (canvas) — chỉnh prompt/node rồi bấm Chạy workflow"
+          :title="t('editor.editorTabTooltip')"
           @click="focusEditTab()"
         >
           <i class="bi bi-pencil-square" />
           <span>New workflow</span>
         </button>
         <button
-          v-for="t in runTabs"
-          :key="t.id"
+          v-for="rt in runTabs"
+          :key="rt.id"
           type="button"
-          :class="['apl-runtab', selectedRunId === t.id && 'is-active', `is-${t.status}`]"
-          :title="t.status === 'running' ? 'Run đang chạy — click để theo dõi' : `Run ${t.status}`"
-          @click="focusRunTab(t.id)"
+          :class="['apl-runtab', selectedRunId === rt.id && 'is-active', `is-${rt.status}`]"
+          :title="rt.status === 'running' ? t('editor.runTabRunning') : `Run ${rt.status}`"
+          @click="focusRunTab(rt.id)"
         >
-          <i :class="['bi', t.status === 'running' ? 'bi-arrow-repeat apl-runtab-spin'
-            : t.status === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill']" />
-          <span>Run {{ tabTime(t) }}</span>
+          <i :class="['bi', rt.status === 'running' ? 'bi-arrow-repeat apl-runtab-spin'
+            : rt.status === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill']" />
+          <span>Run {{ tabTime(rt) }}</span>
           <i
-            v-if="t.status !== 'running'"
+            v-if="rt.status !== 'running'"
             class="bi bi-x apl-runtab-x"
-            title="Đóng tab (run vẫn nằm trong lịch sử)"
-            @click.stop="closeRunTab(t.id)"
+            :title="t('editor.closeTabTooltip')"
+            @click.stop="closeRunTab(rt.id)"
           />
         </button>
       </div>
@@ -205,8 +202,8 @@
             <span class="apl-empty-icon">
               <i class="bi bi-stars" />
             </span>
-            <p class="apl-empty-title">Canvas trống</p>
-            <p class="apl-empty-hint">Kéo node từ panel trái để bắt đầu</p>
+            <p class="apl-empty-title">{{ t('editor.canvasEmpty') }}</p>
+            <p class="apl-empty-hint">{{ t('editor.canvasEmptyHint') }}</p>
           </div>
         </ClientOnly>
       </div>
@@ -216,14 +213,14 @@
         <div v-if="drawerVisible && (testHistory.length > 0 || testRunning)" class="apl-run-drawer" :style="{ height: drawerHeight + 'px' }">
           <!-- ALD 27/05/2026 - Drag-to-resize: kéo handle top edge để tăng/giảm chiều cao.
                Persist localStorage để giữ qua reload. Pattern mượn từ pebsteel-ai. -->
-          <div class="apl-drawer-resize" @mousedown.prevent="startDrawerResize" title="Kéo để điều chỉnh chiều cao">
+          <div class="apl-drawer-resize" @mousedown.prevent="startDrawerResize" :title="t('editor.dragToResize')">
             <div class="apl-drawer-resize-line" />
           </div>
           <!-- Header với filter chips + actions -->
           <div class="apl-drawer-header">
             <span class="apl-drawer-title">
               <i class="bi bi-clock-history mr-1" />
-              Lịch sử
+              {{ t('editor.history') }}
             </span>
             <!-- Filter chips -->
             <div class="apl-filter-chips ml-3">
@@ -238,10 +235,10 @@
               </button>
             </div>
             <div class="ml-auto flex items-center gap-1">
-              <button v-if="testHistory.length" type="button" class="apl-text-btn" @click="clearTestHistory" title="Xoá toàn bộ test history">
+              <button v-if="testHistory.length" type="button" class="apl-text-btn" @click="clearTestHistory" :title="t('editor.clearAllHistory')">
                 <i class="bi bi-trash mr-1" />Clear
               </button>
-              <button type="button" class="apl-close" title="Ẩn (giữ history)" @click="drawerVisible = false">
+              <button type="button" class="apl-close" :title="t('editor.hideKeepHistory')" @click="drawerVisible = false">
                 <i class="bi bi-chevron-down" />
               </button>
             </div>
@@ -269,7 +266,7 @@
                       : r.status === 'running' ? 'bi-arrow-repeat animate-spin'
                       : 'bi-x-lg'
                     ]" />
-                    {{ r.status === 'success' ? 'OK' : r.status === 'running' ? 'Running' : 'Fail' }}
+                    {{ r.status === 'success' ? t('editor.statusOk') : r.status === 'running' ? t('editor.statusRunning') : t('editor.statusFail') }}
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="apl-history-title">
@@ -280,7 +277,7 @@
                     <div class="apl-history-meta">
                       {{ r.snapshot?.nodeCount || '?' }} nodes
                       <template v-if="r.status === 'running'">
-                        · <span class="apl-history-running-text">{{ (r.events?.[r.events.length-1]?.msg) || 'chờ kết quả…' }}</span>
+                        · <span class="apl-history-running-text">{{ (r.events?.[r.events.length-1]?.msg) || t('editor.waitingResult') }}</span>
                       </template>
                       <template v-else-if="r.status === 'error' && r.error"> · <span class="apl-history-err">{{ errorPreview(r.error) }}</span></template>
                       <template v-else-if="r.output?.text"> · <span class="apl-history-out">{{ outputPreview(r.output.text) }}</span></template>
@@ -291,7 +288,7 @@
                   v-if="r.status !== 'running'"
                   type="button"
                   class="apl-history-delete"
-                  title="Xoá run này"
+                  :title="t('editor.deleteThisRun')"
                   @click.stop="deleteSingleRun(r)"
                 >
                   <i class="bi bi-x" />
@@ -301,8 +298,8 @@
               <!-- Empty state khi filter ra 0 result -->
               <div v-if="filteredHistory.length === 0 && !testRunning" class="apl-history-empty-list">
                 <i class="bi bi-funnel text-slate-300 text-xl" />
-                <p class="text-[11px] text-slate-400 mt-1">Không có run nào khớp filter</p>
-                <button type="button" class="apl-text-btn mt-1" @click="runFilter = 'all'">Xem tất cả</button>
+                <p class="text-[11px] text-slate-400 mt-1">{{ t('editor.noRunMatchFilter') }}</p>
+                <button type="button" class="apl-text-btn mt-1" @click="runFilter = 'all'">{{ t('editor.viewAll') }}</button>
               </div>
             </div>
 
@@ -335,15 +332,15 @@
                 <span class="apl-detail-meta">
                   <i class="bi bi-diagram-3 mr-1" />{{ selectedTestRun.snapshot?.nodeCount || '?' }} nodes
                 </span>
-                <button v-if="selectedTestRun.status === 'running'" type="button" class="apl-detail-action apl-detail-cancel ml-auto" @click="cancelRun(selectedTestRun)" title="Stop poll + mark cancel">
+                <button v-if="selectedTestRun.status === 'running'" type="button" class="apl-detail-action apl-detail-cancel ml-auto" @click="cancelRun(selectedTestRun)" :title="t('editor.stopPollCancel')">
                   <i class="bi bi-stop-circle mr-1" />Cancel
                 </button>
                 <template v-else>
                   <!-- ALD 17/06/2026 - Run lỗi: "Tiếp tục" = dùng lại bước đã render xong, chỉ render node lỗi + sau (cache theo nội dung). -->
-                  <button v-if="selectedTestRun.status === 'error'" type="button" class="apl-detail-action apl-detail-resume ml-auto" :disabled="hasActiveRun" @click="resumeFromHistory(selectedTestRun)" title="Tiếp tục từ chỗ lỗi: dùng lại bước đã xong, chỉ render node lỗi + phía sau">
-                    <i class="bi bi-skip-forward-fill mr-1" />Tiếp tục
+                  <button v-if="selectedTestRun.status === 'error'" type="button" class="apl-detail-action apl-detail-resume ml-auto" :disabled="hasActiveRun" @click="resumeFromHistory(selectedTestRun)" :title="t('editor.resumeTooltip')">
+                    <i class="bi bi-skip-forward-fill mr-1" />{{ t('editor.resume') }}
                   </button>
-                  <button type="button" class="apl-detail-action" :class="{ 'ml-auto': selectedTestRun.status !== 'error' }" :disabled="hasActiveRun" @click="rerunFromHistory(selectedTestRun)" title="Chạy lại từ đầu với input này (render mới toàn bộ)">
+                  <button type="button" class="apl-detail-action" :class="{ 'ml-auto': selectedTestRun.status !== 'error' }" :disabled="hasActiveRun" @click="rerunFromHistory(selectedTestRun)" :title="t('editor.rerunTooltip')">
                     <i class="bi bi-arrow-clockwise mr-1" />Re-run
                   </button>
                 </template>
@@ -357,14 +354,14 @@
                 <section v-if="pendingJobInfo?.state === 'running'" class="px-4 py-2 apl-detail-section apl-section-pending">
                   <div class="apl-section-head apl-pending-head">
                     <i class="bi bi-arrow-repeat animate-spin text-amber-500" />
-                    <span class="apl-section-title">Job đang chạy</span>
+                    <span class="apl-section-title">{{ t('editor.jobRunning') }}</span>
                     <span class="apl-pending-kind">{{ pendingJobInfo.kind }}</span>
-                    <button type="button" class="apl-pending-cancel" title="Huỷ job" @click="onCancelFashionJob(pendingJobInfo.job_id)">
-                      <i class="bi bi-x-circle" /> Huỷ
+                    <button type="button" class="apl-pending-cancel" :title="t('editor.cancelJob')" @click="onCancelFashionJob(pendingJobInfo.job_id)">
+                      <i class="bi bi-x-circle" /> {{ t('editor.cancel') }}
                     </button>
                   </div>
                   <div class="apl-pending-body">
-                    <div class="apl-pending-step">{{ pendingJobInfo.current_step || 'processing…' }}</div>
+                    <div class="apl-pending-step">{{ pendingJobInfo.current_step || t('editor.processing') }}</div>
                     <div class="apl-pending-bar">
                       <div class="apl-pending-fill" :style="{ width: `${Math.round(pendingJobInfo.progress * 100)}%` }" />
                     </div>
@@ -381,11 +378,11 @@
                 <section v-else-if="pendingJobInfo?.state === 'cancelled'" class="px-4 py-2 apl-detail-section apl-section-cancelled">
                   <div class="apl-section-head">
                     <i class="bi bi-slash-circle text-gray-500" />
-                    <span class="apl-section-title text-gray-700">Job đã huỷ</span>
+                    <span class="apl-section-title text-gray-700">{{ t('editor.jobCancelled') }}</span>
                     <span class="apl-pending-kind">{{ pendingJobInfo.kind }}</span>
                   </div>
                   <div class="apl-pending-body">
-                    <div class="apl-pending-step text-gray-500 italic">Worker đã dừng, GPU đã free. Có thể chạy lại workflow nếu cần.</div>
+                    <div class="apl-pending-step text-gray-500 italic">{{ t('editor.jobCancelledHint') }}</div>
                     <div class="apl-pending-meta">
                       <span class="font-mono text-gray-500">{{ pendingJobInfo.job_id?.slice(0, 8) }}</span>
                     </div>
@@ -396,7 +393,7 @@
                 <section v-else-if="pendingJobInfo?.state === 'error'" class="px-4 py-2 apl-detail-section apl-section-job-error">
                   <div class="apl-section-head">
                     <i class="bi bi-exclamation-octagon-fill text-rose-500" />
-                    <span class="apl-section-title text-rose-700">Job lỗi</span>
+                    <span class="apl-section-title text-rose-700">{{ t('editor.jobError') }}</span>
                     <span class="apl-pending-kind">{{ pendingJobInfo.kind }}</span>
                   </div>
                   <div class="apl-pending-body">
@@ -411,7 +408,7 @@
                 <section v-else-if="pendingJobInfo?.state === 'done'" class="px-4 py-2 apl-detail-section apl-section-done">
                   <div class="apl-section-head">
                     <i class="bi bi-check-circle-fill text-emerald-500" />
-                    <span class="apl-section-title text-emerald-700">Job hoàn tất</span>
+                    <span class="apl-section-title text-emerald-700">{{ t('editor.jobDone') }}</span>
                     <span class="apl-pending-kind">{{ pendingJobInfo.kind }}</span>
                   </div>
                   <div class="apl-pending-body">
@@ -439,10 +436,10 @@
                         :href="img.url"
                         target="_blank"
                         class="block rounded-lg overflow-hidden bg-slate-50 border border-slate-200 hover:border-primary/60 transition"
-                        :title="img.label || `Ảnh ${idx + 1}`"
+                        :title="img.label || t('editor.imageN', { n: idx + 1 })"
                       >
                         <img :src="img.url" alt="Job output" class="w-full aspect-square object-cover" />
-                        <span class="block px-2 py-1 text-[10px] text-slate-600 truncate">{{ img.label || `Ảnh ${idx + 1}` }}</span>
+                        <span class="block px-2 py-1 text-[10px] text-slate-600 truncate">{{ img.label || t('editor.imageN', { n: idx + 1 }) }}</span>
                       </a>
                     </div>
                     <div class="apl-pending-meta">
@@ -451,12 +448,12 @@
                         v-if="pendingJobInfo.video_url"
                         type="button"
                         class="ml-auto text-primary hover:underline text-xs"
-                        @click="copyToClipboard(pendingJobInfo.video_url, 'Đã copy URL')"
+                        @click="copyToClipboard(pendingJobInfo.video_url, t('editor.toastCopiedUrl'))"
                       >
                         <i class="bi bi-clipboard me-1" /> Copy URL
                       </button>
                       <a v-if="pendingJobInfo.video_url" :href="pendingJobInfo.video_url" target="_blank" download class="text-primary hover:underline text-xs">
-                        <i class="bi bi-download me-1" /> Tải về
+                        <i class="bi bi-download me-1" /> {{ t('editor.download') }}
                       </a>
                     </div>
                   </div>
@@ -478,19 +475,19 @@
                     <i class="bi bi-arrow-return-right text-emerald-500" />
                     <span class="apl-section-title">Output</span>
                     <span class="apl-section-badge">{{ selectedTestRun.output.text.length.toLocaleString() }} chars</span>
-                    <button type="button" class="apl-icon-btn-copy ml-auto" @click="copyToClipboard(selectedTestRun.output.text, 'Đã copy output')" title="Copy toàn bộ output">
+                    <button type="button" class="apl-icon-btn-copy ml-auto" @click="copyToClipboard(selectedTestRun.output.text, t('editor.toastCopiedOutput'))" :title="t('editor.copyAllOutput')">
                       <i class="bi bi-clipboard" />
                     </button>
-                    <button type="button" class="apl-icon-btn-copy" @click="downloadOutput(selectedTestRun)" title="Tải về .txt">
+                    <button type="button" class="apl-icon-btn-copy" @click="downloadOutput(selectedTestRun)" :title="t('editor.downloadTxt')">
                       <i class="bi bi-download" />
                     </button>
-                    <button v-if="selectedTestRun.output.text.length > 5000" type="button" class="apl-icon-btn-copy" @click="outputExpanded = !outputExpanded" :title="outputExpanded ? 'Thu gọn' : 'Hiện đầy đủ (có thể chậm với file lớn)'">
+                    <button v-if="selectedTestRun.output.text.length > 5000" type="button" class="apl-icon-btn-copy" @click="outputExpanded = !outputExpanded" :title="outputExpanded ? t('editor.collapse') : t('editor.expandFull')">
                       <i :class="['bi', outputExpanded ? 'bi-arrows-collapse' : 'bi-arrows-expand']" />
                     </button>
                   </div>
                   <pre class="apl-detail-pre">{{ outputExpanded || selectedTestRun.output.text.length <= 5000
                     ? selectedTestRun.output.text
-                    : selectedTestRun.output.text.slice(0, 5000) + '\n\n…(còn ' + (selectedTestRun.output.text.length - 5000).toLocaleString() + ' chars — bấm icon mở rộng hoặc tải .txt)' }}</pre>
+                    : selectedTestRun.output.text.slice(0, 5000) + '\n\n' + t('editor.outputTruncated', { n: (selectedTestRun.output.text.length - 5000).toLocaleString() }) }}</pre>
                 </section>
 
                 <!-- Triggers (input config snapshot) -->
@@ -528,19 +525,19 @@
                       <span class="apl-event-ts">{{ fmtRelTime(ev.ts, selectedTestRun.ts) }}</span>
                     </li>
                   </ul>
-                  <p v-else class="apl-empty-text">Không có event</p>
+                  <p v-else class="apl-empty-text">{{ t('editor.noEvent') }}</p>
                 </section>
               </div>
             </div>
             <div v-else-if="testRunning" class="apl-history-empty">
               <div class="apl-loader-ring" />
-              <p class="apl-empty-title mt-3">Đang chạy workflow...</p>
-              <p class="apl-empty-hint">{{ fmtMs(runningElapsedMs) }} elapsed (cap 3 phút)</p>
+              <p class="apl-empty-title mt-3">{{ t('editor.runningWorkflow') }}</p>
+              <p class="apl-empty-hint">{{ fmtMs(runningElapsedMs) }} {{ t('editor.elapsedCap3min') }}</p>
             </div>
             <div v-else class="apl-history-empty">
               <i class="bi bi-clock-history text-3xl text-slate-300" />
               <p class="apl-empty-title mt-2">No Processing</p>
-              <p class="apl-empty-hint">Bấm <kbd class="apl-kbd-mini"><i class="bi bi-play-fill" /> Run</kbd> trên thanh top để chạy workflow</p>
+              <p class="apl-empty-hint">{{ t('editor.pressRunHintPre') }}<kbd class="apl-kbd-mini"><i class="bi bi-play-fill" /> Run</kbd>{{ t('editor.pressRunHintPost') }}</p>
             </div>
           </div>
         </div>
@@ -561,7 +558,7 @@
                 <p class="apl-inspector-title">{{ currentNodeStyle.label }}</p>
               </div>
             </div>
-            <button type="button" class="apl-icon-btn apl-icon-btn-danger" @click="onDeleteNode" title="Xoá (⌫)">
+            <button type="button" class="apl-icon-btn apl-icon-btn-danger" @click="onDeleteNode" :title="t('editor.deleteNodeTooltip')">
               <i class="bi bi-trash" />
             </button>
           </div>
@@ -571,7 +568,7 @@
                  RUN ĐÓ chạy, không phải bản đang sửa. Bấm "New workflow" (newBlankSession) để mở phiên soạn mới. -->
             <div v-if="isViewingHistory" class="flex items-center gap-2 mb-3 px-2.5 py-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
               <i class="bi bi-clock-history shrink-0 text-amber-500" />
-              <span class="flex-1 leading-snug">Đang xem <b>run cũ</b> (chỉ đọc).</span>
+              <span class="flex-1 leading-snug">{{ t('editor.viewingOldRunPre') }}<b>{{ t('editor.viewingOldRunBold') }}</b>{{ t('editor.viewingOldRunPost') }}</span>
               <button type="button" class="shrink-0 px-2 py-1 rounded-md bg-amber-500 text-white font-semibold hover:bg-amber-600 transition" @click="newBlankSession">New workflow</button>
             </div>
             <!-- #endregion -->
@@ -593,7 +590,7 @@
               :runtime="nodeRuntime"
               @update:config="updateNodeConfig"
             />
-            <p v-else class="text-xs text-slate-400 italic pt-2">Node này không có config — chỉ định nghĩa flow.</p>
+            <p v-else class="text-xs text-slate-400 italic pt-2">{{ t('editor.nodeNoConfig') }}</p>
 
             <!-- On Failure — common config cho mọi node trừ input/output/condition. -->
             <div v-if="canHaveErrorRoute(selectedNode.data.type)" class="apl-on-failure" :class="isViewingHistory ? 'pointer-events-none opacity-60' : ''">
@@ -603,12 +600,12 @@
               </label>
               <select :value="selectedNode.data.config?.onError || 'stop'" :disabled="isViewingHistory" class="apl-of-select mt-1.5" @change="onOnErrorChange($event.target.value)">
                 <option value="stop">Stop workflow (default)</option>
-                <option value="continue">Continue — bỏ qua node lỗi</option>
+                <option value="continue">{{ t('editor.onErrorContinue') }}</option>
                 <option value="route">Route to error branch</option>
               </select>
-              <p v-if="(selectedNode.data.config?.onError || 'stop') === 'stop'" class="apl-of-hint">Lỗi → workflow dừng với status="error".</p>
-              <p v-else-if="selectedNode.data.config?.onError === 'continue'" class="apl-of-hint">Lỗi → log warn, pass output node trước xuôi xuống (như chưa chạy node này).</p>
-              <p v-else class="apl-of-hint">Lỗi → fire qua handle <b class="text-amber-700">ERR</b> (cam) bên phải. Wire tới node xử lý error (HTTP notify, fallback chat...).</p>
+              <p v-if="(selectedNode.data.config?.onError || 'stop') === 'stop'" class="apl-of-hint">{{ t('editor.onErrorStopHint') }}</p>
+              <p v-else-if="selectedNode.data.config?.onError === 'continue'" class="apl-of-hint">{{ t('editor.onErrorContinueHint') }}</p>
+              <p v-else class="apl-of-hint">{{ t('editor.onErrorRouteHintPre') }}<b class="text-amber-700">ERR</b>{{ t('editor.onErrorRouteHintPost') }}</p>
             </div>
             </div>
           </div>
@@ -638,9 +635,9 @@
               <header class="apl-api-section-head">
                 <div>
                   <p class="apl-api-section-title">Sync API</p>
-                  <p class="apl-api-section-sub">POST /invoke — chờ response chứa output luôn. Dùng cho workflow nhanh (&lt;30s).</p>
+                  <p class="apl-api-section-sub">{{ t('editor.syncApiSub') }}</p>
                 </div>
-                <button type="button" class="apl-icon-btn-copy" @click="copyToClipboard(syncCurlPreview, 'Đã copy Sync cURL')" title="Copy cURL">
+                <button type="button" class="apl-icon-btn-copy" @click="copyToClipboard(syncCurlPreview, t('editor.toastCopiedSyncCurl'))" :title="t('editor.copyCurl')">
                   <i class="bi bi-clipboard" />
                 </button>
               </header>
@@ -653,27 +650,27 @@
                 <input v-model="asyncConfig.async_enabled" type="checkbox" class="apl-checkbox" />
                 <span class="min-w-0 flex-1">
                   <span class="apl-async-toggle-label">Async Mode</span>
-                  <span class="apl-async-toggle-hint">App B gọi <code>/invoke-async</code> → nhận <code>job_id</code> ngay → App AI gọi callback khi xong.</span>
+                  <span class="apl-async-toggle-hint">{{ t('editor.asyncToggleHintA') }}<code>/invoke-async</code>{{ t('editor.asyncToggleHintB') }}<code>job_id</code>{{ t('editor.asyncToggleHintC') }}</span>
                 </span>
               </label>
 
               <div v-if="asyncConfig.async_enabled" class="apl-async-body">
                 <!-- Cấu hình -->
-                <div class="apl-api-subhead">Cấu hình callback</div>
+                <div class="apl-api-subhead">{{ t('editor.callbackConfig') }}</div>
                 <div class="space-y-3">
                   <div>
-                    <label class="apl-modal-label">Callback URL <span class="text-rose-500">*</span></label>
+                    <label class="apl-modal-label">{{ t('editor.callbackUrl') }} <span class="text-rose-500">*</span></label>
                     <input
                       v-model="asyncConfig.callback_url"
                       type="text"
                       placeholder="https://app-b.pebsteel.com/api/ai-callback"
                       class="apl-modal-input mt-1.5 font-mono text-[12px]"
                     />
-                    <p class="apl-modal-hint mt-1">Endpoint App B nhận POST khi workflow xong. Bắt đầu bằng <code>https://</code>.</p>
+                    <p class="apl-modal-hint mt-1">{{ t('editor.callbackUrlHintPre') }}<code>https://</code>.</p>
                   </div>
 
                   <div>
-                    <label class="apl-modal-label">Custom headers</label>
+                    <label class="apl-modal-label">{{ t('editor.customHeaders') }}</label>
                     <div class="apl-header-list mt-1.5">
                       <div v-for="(h, idx) in asyncConfig.callback_headers_list" :key="idx" class="apl-header-row">
                         <input
@@ -688,15 +685,15 @@
                           placeholder="Bearer xxx"
                           class="apl-modal-input apl-header-val font-mono text-[12px]"
                         />
-                        <button type="button" class="apl-icon-btn-mini" @click="removeHeader(idx)" title="Xoá header">
+                        <button type="button" class="apl-icon-btn-mini" @click="removeHeader(idx)" :title="t('editor.removeHeader')">
                           <i class="bi bi-x-lg" />
                         </button>
                       </div>
                       <button type="button" class="apl-btn apl-btn-ghost apl-btn-mini mt-1" @click="addHeader">
-                        <i class="bi bi-plus-lg" /> Thêm header
+                        <i class="bi bi-plus-lg" /> {{ t('editor.addHeader') }}
                       </button>
                     </div>
-                    <p class="apl-modal-hint mt-1">VD <code>Authorization: Bearer xxx</code> hoặc <code>X-API-Key: yyy</code> — App AI gửi y nguyên kèm callback, App B verify bằng middleware sẵn có.</p>
+                    <p class="apl-modal-hint mt-1">{{ t('editor.headersHintPre') }} <code>Authorization: Bearer xxx</code> {{ t('editor.headersHintOr') }} <code>X-API-Key: yyy</code> {{ t('editor.headersHintPost') }}</p>
                   </div>
                 </div>
 
@@ -705,8 +702,8 @@
                 <div class="apl-preview-grid mt-1.5">
                   <div class="apl-preview-block">
                     <div class="apl-preview-head">
-                      <p class="apl-preview-title">cURL App B gửi</p>
-                      <button type="button" class="apl-icon-btn-copy" @click="copyToClipboard(asyncCurlPreview, 'Đã copy Async cURL')" title="Copy">
+                      <p class="apl-preview-title">{{ t('editor.curlAppBSends') }}</p>
+                      <button type="button" class="apl-icon-btn-copy" @click="copyToClipboard(asyncCurlPreview, t('editor.toastCopiedAsyncCurl'))" :title="t('editor.copy')">
                         <i class="bi bi-clipboard" />
                       </button>
                     </div>
@@ -714,27 +711,27 @@
                   </div>
                   <div class="apl-preview-block">
                     <div class="apl-preview-head">
-                      <p class="apl-preview-title">Callback App B nhận</p>
-                      <button type="button" class="apl-icon-btn-copy" @click="copyToClipboard(asyncCallbackPreview, 'Đã copy callback payload')" title="Copy">
+                      <p class="apl-preview-title">{{ t('editor.callbackAppBReceives') }}</p>
+                      <button type="button" class="apl-icon-btn-copy" @click="copyToClipboard(asyncCallbackPreview, t('editor.toastCopiedCallback'))" :title="t('editor.copy')">
                         <i class="bi bi-clipboard" />
                       </button>
                     </div>
                     <pre class="apl-curl-pre">{{ asyncCallbackPreview }}</pre>
                   </div>
                 </div>
-                <p class="apl-modal-hint mt-2">Headers extra App B nhận: <code>X-Webhook-Job-Id</code>, <code>X-Webhook-Attempt</code> + custom headers ở trên. Retry tự động 3 lần (30s/2m/10m) nếu App B trả non-2xx.</p>
+                <p class="apl-modal-hint mt-2">{{ t('editor.webhookHeadersHintPre') }} <code>X-Webhook-Job-Id</code>, <code>X-Webhook-Attempt</code> {{ t('editor.webhookHeadersHintPost') }}</p>
               </div>
             </section>
           </div>
           <div class="apl-modal-footer">
-            <button type="button" class="apl-btn apl-btn-ghost" @click="asyncModalOpen = false">Đóng</button>
+            <button type="button" class="apl-btn apl-btn-ghost" @click="asyncModalOpen = false">{{ t('editor.close') }}</button>
             <button
               type="button"
               :disabled="asyncSaving"
               :class="['apl-btn', asyncSaving ? 'apl-btn-disabled' : 'apl-btn-primary']"
               @click="saveAsyncConfig"
             >
-              <i :class="['bi', asyncSaving ? 'bi-arrow-repeat animate-spin' : 'bi-check2']" /> Lưu config
+              <i :class="['bi', asyncSaving ? 'bi-arrow-repeat animate-spin' : 'bi-check2']" /> {{ t('editor.saveConfig') }}
             </button>
           </div>
         </div>
@@ -759,7 +756,7 @@
           <div class="apl-modal-body">
             <label class="apl-modal-label">
               Session payload
-              <span class="text-slate-400 font-normal normal-case">— {{ sessionInputs.length }} node cần input</span>
+              <span class="text-slate-400 font-normal normal-case">— {{ t('editor.nodesNeedInput', { n: sessionInputs.length }) }}</span>
             </label>
             <div class="apl-input-list mt-2">
               <div v-for="input in sessionInputs" :key="input.id" class="apl-input-row">
@@ -770,18 +767,18 @@
             <textarea
               v-model="testInput"
               rows="4"
-              placeholder="Nhập text giả lập user message..."
+              :placeholder="t('editor.testInputPlaceholder')"
               class="apl-modal-input mt-3"
               autofocus
               @keydown.meta.enter.prevent="doTestRun"
               @keydown.ctrl.enter.prevent="doTestRun"
             />
-            <p class="apl-modal-hint">Text này set vào <code>session.text</code>. Các field khác (image/file) chưa support qua modal — dùng URL/Upload source. <kbd class="apl-kbd-mini">⌘↵</kbd></p>
+            <p class="apl-modal-hint">{{ t('editor.testInputHintPre') }} <code>session.text</code>. {{ t('editor.testInputHintPost') }} <kbd class="apl-kbd-mini">⌘↵</kbd></p>
           </div>
           <div class="apl-modal-footer">
-            <button type="button" class="apl-btn apl-btn-ghost" @click="testRunOpen = false">Huỷ</button>
+            <button type="button" class="apl-btn apl-btn-ghost" @click="testRunOpen = false">{{ t('editor.cancel') }}</button>
             <button type="button" class="apl-btn apl-btn-primary" @click="doTestRun">
-              <i class="bi bi-play-fill" /> Chạy
+              <i class="bi bi-play-fill" /> {{ t('editor.run') }}
             </button>
           </div>
         </div>
@@ -796,19 +793,18 @@
             <div class="flex items-center gap-2.5">
               <span class="apl-modal-icon"><i class="bi bi-buildings" /></span>
               <div>
-                <p class="apl-modal-overline">Time-lapse Xây dựng BĐS</p>
-                <p class="apl-modal-title">Dựng pipeline tự động</p>
+                <p class="apl-modal-overline">{{ t('editor.bdsOverline') }}</p>
+                <p class="apl-modal-title">{{ t('editor.bdsTitle') }}</p>
               </div>
             </div>
             <button type="button" class="apl-icon-btn-modal" @click="bdsGenOpen = false"><i class="bi bi-x-lg" /></button>
           </div>
           <div class="apl-modal-body">
             <p class="apl-modal-hint mb-3">
-              <b>1 ảnh nhà hoàn thiện</b> → tỏa ra số công đoạn bạn chọn, mỗi công đoạn 1 chuỗi <b>tạo ảnh → Ảnh→Video<template v-if="bdsGen.voiceover"> → Lồng tiếng</template></b>,
-              gộp vào <b>Ghép cảnh</b> → <b>Kết quả</b>. Chỉ tải <b>1 ảnh</b> lúc chạy. Sửa prompt/giọng từng node sau khi dựng.
+              <b>{{ t('editor.bdsIntroB1') }}</b> {{ t('editor.bdsIntroT1') }} <b>{{ t('editor.bdsIntroB2') }}<template v-if="bdsGen.voiceover"> {{ t('editor.bdsIntroVoiceover') }}</template></b>{{ t('editor.bdsIntroT2') }} <b>{{ t('editor.bdsIntroB3') }}</b> {{ t('editor.bdsIntroArrow') }} <b>{{ t('editor.bdsIntroB4') }}</b>{{ t('editor.bdsIntroT3') }}
             </p>
 
-            <label class="apl-modal-label">Số công đoạn</label>
+            <label class="apl-modal-label">{{ t('editor.bdsStageCount') }}</label>
             <div class="grid grid-cols-5 gap-1.5 mt-2">
               <button
                 v-for="n in [2,3,4,5,6]"
@@ -822,8 +818,8 @@
 
             <div class="flex items-center justify-between mt-4">
               <div class="min-w-0">
-                <label class="apl-modal-label">Lồng tiếng thuyết minh</label>
-                <p class="apl-modal-hint">Mỗi công đoạn thêm node đọc mô tả lên clip (giọng tiếng Việt).</p>
+                <label class="apl-modal-label">{{ t('editor.bdsVoiceover') }}</label>
+                <p class="apl-modal-hint">{{ t('editor.bdsVoiceoverHint') }}</p>
               </div>
               <button
                 type="button"
@@ -838,8 +834,8 @@
             <!-- ALD 17/06/2026 - Cảnh đêm (tuỳ chọn): thêm 1 công đoạn CUỐI là nhà hoàn thiện về đêm + flycam đêm. -->
             <div class="flex items-center justify-between mt-4">
               <div class="min-w-0">
-                <label class="apl-modal-label">Cảnh đêm (cảnh cuối)</label>
-                <p class="apl-modal-hint">Thêm 1 cảnh cuối: nhà hoàn thiện về đêm, đèn ấm + flycam đêm.</p>
+                <label class="apl-modal-label">{{ t('editor.bdsNightScene') }}</label>
+                <p class="apl-modal-hint">{{ t('editor.bdsNightSceneHint') }}</p>
               </div>
               <button
                 type="button"
@@ -852,7 +848,7 @@
             </div>
 
             <div v-if="bdsGen.voiceover" class="mt-3">
-              <label class="apl-modal-label">Giọng đọc</label>
+              <label class="apl-modal-label">{{ t('editor.bdsVoice') }}</label>
               <div class="grid grid-cols-3 gap-1.5 mt-2">
                 <button
                   v-for="v in BDS_VOICES"
@@ -865,20 +861,20 @@
               </div>
             </div>
 
-            <label class="apl-modal-label mt-4 block">Mô tả từng công đoạn</label>
+            <label class="apl-modal-label mt-4 block">{{ t('editor.bdsStageDescriptions') }}</label>
             <div class="space-y-2.5 mt-2">
               <div v-for="(st, i) in bdsGen.stages" :key="i" class="rounded-xl border border-gray-200 bg-gray-50/60 p-2.5">
-                <p class="text-[11px] font-bold text-emerald-700 mb-1.5">Công đoạn {{ i + 1 }}</p>
-                <textarea v-model="st.image" rows="2" class="apl-modal-input text-[12px]" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" placeholder="Ảnh: trạng thái xây dựng (tạo ảnh)…" />
-                <textarea v-model="st.motion" rows="1" class="apl-modal-input text-[12px] mt-1.5" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" placeholder="Chuyển động: cảnh quay / công nhân (Ảnh→Video)…" />
-                <textarea v-if="bdsGen.voiceover" v-model="st.narration" rows="1" class="apl-modal-input text-[12px] mt-1.5" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" placeholder="Lời thuyết minh (có dấu)…" />
+                <p class="text-[11px] font-bold text-emerald-700 mb-1.5">{{ t('editor.bdsStageN', { n: i + 1 }) }}</p>
+                <textarea v-model="st.image" rows="2" class="apl-modal-input text-[12px]" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" :placeholder="t('editor.bdsStageImagePlaceholder')" />
+                <textarea v-model="st.motion" rows="1" class="apl-modal-input text-[12px] mt-1.5" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" :placeholder="t('editor.bdsStageMotionPlaceholder')" />
+                <textarea v-if="bdsGen.voiceover" v-model="st.narration" rows="1" class="apl-modal-input text-[12px] mt-1.5" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" :placeholder="t('editor.bdsStageNarrationPlaceholder')" />
               </div>
             </div>
           </div>
           <div class="apl-modal-footer">
-            <button type="button" class="apl-btn apl-btn-ghost" @click="bdsGenOpen = false">Huỷ</button>
+            <button type="button" class="apl-btn apl-btn-ghost" @click="bdsGenOpen = false">{{ t('editor.cancel') }}</button>
             <button type="button" class="apl-btn apl-btn-primary" @click="buildBdsPipeline">
-              <i class="bi bi-magic" /> Dựng pipeline
+              <i class="bi bi-magic" /> {{ t('editor.buildPipeline') }}
             </button>
           </div>
         </div>
@@ -903,9 +899,12 @@ definePageMeta({ middleware: 'auth', layout: 'default' })
 
 const route = useRoute()
 const wf = useWorkflows()
+const db = useLocalDb()
+const fileStore = useFileStore(); fileStore.load()
 const toast = useToast()
 const noti = useNotifications()
 const confirmDialog = useConfirm()
+const { t } = useI18n()
 
 const workflow = ref(null)
 // ALD 27/05/2026 - Public workflow của user khác: ẩn nút Lưu + badge "Chưa lưu",
@@ -920,6 +919,16 @@ const saving = ref(false)
 // Saved baseline — deep snapshot. dirty = !isEqual(currentDefinition(), savedDefinition).
 // Tránh flag-based "đã thay đổi" sai (vd select node, scroll Vue Flow trigger watch).
 const savedDefinition = ref(null)
+// ALD 18/06/2026 - Đổi ngôn ngữ palette theo nút VI/EN trên thanh nav.
+const { lang: uiLang } = useLang()
+// Nhãn tiếng Việt cho palette (khớp NODE_BIL trong FlowNode); EN lấy từ t.label của catalog.
+const NODE_VI = {
+  'input-text': 'Nhập văn bản', 'input-image': 'Nhập ảnh', 'input-video': 'Nhập video', 'input-audio': 'Nhập âm thanh', 'input-file': 'Nhập file',
+  output: 'Kết quả', 'create-image': 'Tạo ảnh', tryon: 'Thử đồ', compose: 'Ghép vào mẫu',
+  motion: 'Điều khiển chuyển động', 'fashion-motion': 'Thời trang chuyển động', ss: 'Ảnh → Video', 'wan-i2v': 'Ảnh đầu → cuối',
+  'text-to-video': 'Văn bản → Video', teaser: 'Teaser', bds: 'Tua nhanh xây dựng',
+  talk: 'Nói (lip-sync)', voiceover: 'Lồng tiếng', concat: 'Ghép cảnh', subtitle: 'Phụ đề / Dịch'
+}
 const paletteSearch = ref('')
 const testRunOpen = ref(false)
 const testInput = ref('')
@@ -1272,8 +1281,8 @@ function outputPreview(text) {
   const m = s.match(/^\[(\w+)\][\s]+fashion-motion\b/i)
   if (m) {
     const st = m[1].toLowerCase()
-    if (st === 'pending' || st === 'queued') return 'Fashion Motion · đang chờ worker…'
-    if (st === 'running') return 'Fashion Motion · đang xử lý…'
+    if (st === 'pending' || st === 'queued') return t('editor.fmWaitingWorker')
+    if (st === 'running') return t('editor.fmProcessing')
   }
   return s.slice(0, 80)
 }
@@ -1282,10 +1291,10 @@ function outputPreview(text) {
 // accidental click (focus stuck trên button + Enter → kick job ngoài ý muốn).
 async function rerunFromHistory(run) {
   const ok = await confirmDialog.ask({
-    title: 'Chạy lại workflow?',
-    message: 'Sẽ tạo run mới với cùng input. Job nặng (~6-22 phút GPU).',
-    confirmText: 'Chạy lại',
-    cancelText: 'Huỷ',
+    title: t('editor.rerunConfirmTitle'),
+    message: t('editor.rerunConfirmMsg'),
+    confirmText: t('editor.rerun'),
+    cancelText: t('editor.cancel'),
     variant: 'primary',
   })
   if (!ok) return
@@ -1297,10 +1306,10 @@ async function rerunFromHistory(run) {
 const pendingResume = ref(false)
 async function resumeFromHistory(run) {
   const ok = await confirmDialog.ask({
-    title: 'Tiếp tục từ chỗ lỗi?',
-    message: 'Dùng lại các bước đã render xong (ảnh/clip cũ), chỉ render lại node lỗi + phía sau. Nhanh hơn nhiều so với chạy mới.',
-    confirmText: 'Tiếp tục',
-    cancelText: 'Huỷ',
+    title: t('editor.resumeConfirmTitle'),
+    message: t('editor.resumeConfirmMsg'),
+    confirmText: t('editor.resume'),
+    cancelText: t('editor.cancel'),
     variant: 'primary',
   })
   if (!ok) return
@@ -1418,58 +1427,58 @@ const customNodeTypes = { step: markRaw(FlowNode) }
 // → workflow đã lưu dùng node đó vẫn hiển thị & chạy. 'compose' ẩn vì cùng backend Create Image (preset trùng).
 const CATEGORIES = [
   {
-    id: 'io', label: 'Nguồn / Kết quả',
+    id: 'io', label: t('editor.catIo'),
     nodes: [
-      { id: 'input',       label: 'Input Text',  hint: 'Text input (session / URL / static)',    icon: 'bi-chat-left-text', color: '#34C759', soft: '#E8F8EC' },
-      { id: 'input-image', label: 'Input Image', hint: 'Ảnh — upload device hoặc URL',           icon: 'bi-image',          color: '#34C759', soft: '#E8F8EC' },
-      { id: 'input-video', label: 'Input Video', hint: 'Video — upload device hoặc URL',         icon: 'bi-film',           color: '#34C759', soft: '#E8F8EC' },
-      { id: 'input-audio', label: 'Input Audio', hint: 'Audio (MP3/WAV/M4A) — upload hoặc URL', icon: 'bi-music-note-beamed', color: '#34C759', soft: '#E8F8EC' },
-      { id: 'input-file',  label: 'Input File',  hint: 'File generic — PDF/ZIP/v.v.',            icon: 'bi-file-earmark',   color: '#34C759', soft: '#E8F8EC' },
-      { id: 'output',      label: 'Output',      hint: 'Trả kết quả về end user',                icon: 'bi-box-arrow-right', color: '#8E8E93', soft: '#EFEFF4' }
+      { id: 'input',       label: 'Input Text',  hint: t('editor.hintInputText'),    icon: 'bi-chat-left-text', color: '#34C759', soft: '#E8F8EC' },
+      { id: 'input-image', label: 'Input Image', hint: t('editor.hintInputImage'),           icon: 'bi-image',          color: '#34C759', soft: '#E8F8EC' },
+      { id: 'input-video', label: 'Input Video', hint: t('editor.hintInputVideo'),         icon: 'bi-film',           color: '#34C759', soft: '#E8F8EC' },
+      { id: 'input-audio', label: 'Input Audio', hint: t('editor.hintInputAudio'), icon: 'bi-music-note-beamed', color: '#34C759', soft: '#E8F8EC' },
+      { id: 'input-file',  label: 'Input File',  hint: t('editor.hintInputFile'),            icon: 'bi-file-earmark',   color: '#34C759', soft: '#E8F8EC' },
+      { id: 'output',      label: 'Output',      hint: t('editor.hintOutput'),                icon: 'bi-box-arrow-right', color: '#8E8E93', soft: '#EFEFF4' }
     ]
   },
   {
-    id: 'image', label: 'Ảnh',
+    id: 'image', label: t('editor.catImage'),
     nodes: [
-      { id: 'create-image', label: 'Create Image', hint: 'Mô tả → ảnh AI. Có thể nối 1–3 ảnh tham chiếu. (provider nhóm Tạo/sửa ảnh)', icon: 'bi-images', color: '#AF52DE', soft: '#F4E9FB' },
-      { id: 'tryon',        label: 'Thử đồ',       hint: 'Người mẫu + sản phẩm → ảnh đã thay đồ. (provider nhóm Tạo/sửa ảnh)', icon: 'bi-person-vcard', color: '#FF9500', soft: '#FFF1DE' },
-      { id: 'compose', label: 'Ghép vào mẫu', hint: 'Ghép người thật vào ảnh mẫu, giữ khuôn mặt. (provider nhóm Tạo/sửa ảnh)', icon: 'bi-person-bounding-box', color: '#5856D6', soft: '#ECECFB' }
+      { id: 'create-image', label: 'Create Image', hint: t('editor.hintCreateImage'), icon: 'bi-images', color: '#AF52DE', soft: '#F4E9FB' },
+      { id: 'tryon',        label: 'Thử đồ',       hint: t('editor.hintTryon'), icon: 'bi-person-vcard', color: '#FF9500', soft: '#FFF1DE' },
+      { id: 'compose', label: 'Ghép vào mẫu', hint: t('editor.hintCompose'), icon: 'bi-person-bounding-box', color: '#5856D6', soft: '#ECECFB' }
     ]
   },
   {
-    id: 'video', label: 'Video từ ảnh / prompt',
+    id: 'video', label: t('editor.catVideo'),
     nodes: [
-      { id: 'motion',         label: 'Motion Control',  hint: 'Ảnh + mô tả chuyển động → video. (provider nhóm Tạo video)', icon: 'bi-film',         color: '#FF2D55', soft: '#FCE5EB' },
-      { id: 'fashion-motion', label: 'Fashion Motion',  hint: 'Người mẫu + sản phẩm → video thời trang. (provider nhóm Tạo video)', icon: 'bi-magic',        color: '#AF52DE', soft: '#F4E9FB' },
-      { id: 'ss',             label: 'Ảnh → Video',     hint: 'Ảnh → video. Cổng vào 1–3 ảnh (chỉnh trong Inspector). (provider nhóm Tạo video)', icon: 'bi-film', color: '#5856D6', soft: '#ECECFB' },
-      { id: 'wan-i2v',        label: 'Ảnh đầu → cuối',  hint: 'Nối Ảnh đầu (+ Ảnh cuối tuỳ chọn) + mô tả → video. (provider nhóm Tạo video)', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
-      { id: 'text-to-video',  label: 'Text → Video',    hint: 'Mô tả → video ngắn, không cần ảnh. (provider nhóm Tạo video)', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
-      { id: 'bds',            label: 'Time-lapse xây dựng', hint: '1 ảnh → video time-lapse xây nhà (đất→móng→khung→hoàn thiện) + flycam. (provider nhóm Tạo video)', icon: 'bi-buildings', color: '#FF9500', soft: '#FFF1DD' }
+      { id: 'motion',         label: 'Motion Control',  hint: t('editor.hintMotion'), icon: 'bi-film',         color: '#FF2D55', soft: '#FCE5EB' },
+      { id: 'fashion-motion', label: 'Fashion Motion',  hint: t('editor.hintFashionMotion'), icon: 'bi-magic',        color: '#AF52DE', soft: '#F4E9FB' },
+      { id: 'ss',             label: 'Ảnh → Video',     hint: t('editor.hintSs'), icon: 'bi-film', color: '#5856D6', soft: '#ECECFB' },
+      { id: 'wan-i2v',        label: 'Ảnh đầu → cuối',  hint: t('editor.hintWanI2v'), icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
+      { id: 'text-to-video',  label: 'Text → Video',    hint: t('editor.hintTextToVideo'), icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
+      { id: 'bds',            label: 'Time-lapse xây dựng', hint: t('editor.hintBds'), icon: 'bi-buildings', color: '#FF9500', soft: '#FFF1DD' }
     ]
   },
   {
-    id: 'talk', label: 'Người nói (lip-sync)',
+    id: 'talk', label: t('editor.catTalk'),
     nodes: [
-      { id: 'talk',        label: 'Nói (lip-sync)',  hint: 'Ảnh nhân vật + câu thoại → video nói nhép miệng. (provider nhóm Giọng nói)', icon: 'bi-mic-fill', color: '#34C759', soft: '#E3F9E9' },
-      { id: 'voiceover',   label: 'Lồng tiếng',      hint: 'Clip video + lời thuyết minh → giọng đọc ghép lên clip, giữ hình & độ dài. (provider nhóm Giọng nói)', icon: 'bi-soundwave', color: '#34C759', soft: '#E3F9E9' }
+      { id: 'talk',        label: 'Nói (lip-sync)',  hint: t('editor.hintTalk'), icon: 'bi-mic-fill', color: '#34C759', soft: '#E3F9E9' },
+      { id: 'voiceover',   label: 'Lồng tiếng',      hint: t('editor.hintVoiceover'), icon: 'bi-soundwave', color: '#34C759', soft: '#E3F9E9' }
     ]
   },
   {
-    id: 'film', label: 'Dựng phim / ghép',
+    id: 'film', label: t('editor.catFilm'),
     nodes: [
-      { id: 'teaser',     label: 'Teaser',        hint: 'Sản phẩm + kịch bản → video quảng cáo điện ảnh. (provider nhóm Tạo video)', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
-      { id: 'concat',     label: 'Ghép cảnh',     hint: 'Ghép ≥2 phân cảnh (clip video) thành 1 video, GIỮ tiếng từng cảnh. Nối cổng clip1, clip2… từ các node talk/motion.', icon: 'bi-collection-play-fill', color: '#5856D6', soft: '#E8E8FB' },
-      { id: 'subtitle',   label: 'Phụ đề + Dịch', hint: '1 video → nhận lời thoại + dịch phụ đề. (provider nhóm Nhận dạng/phụ đề)', icon: 'bi-badge-cc', color: '#FF9500', soft: '#FFF1DD' }
+      { id: 'teaser',     label: 'Teaser',        hint: t('editor.hintTeaser'), icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
+      { id: 'concat',     label: 'Ghép cảnh',     hint: t('editor.hintConcat'), icon: 'bi-collection-play-fill', color: '#5856D6', soft: '#E8E8FB' },
+      { id: 'subtitle',   label: 'Phụ đề + Dịch', hint: t('editor.hintSubtitle'), icon: 'bi-badge-cc', color: '#FF9500', soft: '#FFF1DD' }
     ]
   },
   {
-    id: 'tools', label: 'Tiện ích / Luồng',
+    id: 'tools', label: t('editor.catTools'),
     nodes: [
-      { id: 'http',        label: 'HTTP',        hint: 'Gọi REST API ngoài',              icon: 'bi-cloud-arrow-up-fill',    color: '#5856D6', soft: '#ECEBFB' },
-      { id: 'condition',   label: 'Condition',   hint: 'If-else theo expression',         icon: 'bi-shuffle',                color: '#FF9500', soft: '#FFEFD9' },
-      { id: 'validate',    label: 'Validate',    hint: 'Check field + math sau LLM',      icon: 'bi-check2-square',          color: '#1F7D38', soft: '#DCF4E2' },
-      { id: 'debug',       label: 'Debug',       hint: 'Pass-through + log preview giữa stages', icon: 'bi-bug-fill',         color: '#FF9500', soft: '#FFEFD9' },
-      { id: 'workflow',    label: 'Workflow',    hint: 'Gọi workflow khác (nested)',      icon: 'bi-diagram-3-fill',         color: '#FF2D55', soft: '#FCE5EB' }
+      { id: 'http',        label: 'HTTP',        hint: t('editor.hintHttp'),              icon: 'bi-cloud-arrow-up-fill',    color: '#5856D6', soft: '#ECEBFB' },
+      { id: 'condition',   label: 'Condition',   hint: t('editor.hintCondition'),         icon: 'bi-shuffle',                color: '#FF9500', soft: '#FFEFD9' },
+      { id: 'validate',    label: 'Validate',    hint: t('editor.hintValidate'),      icon: 'bi-check2-square',          color: '#1F7D38', soft: '#DCF4E2' },
+      { id: 'debug',       label: 'Debug',       hint: t('editor.hintDebug'), icon: 'bi-bug-fill',         color: '#FF9500', soft: '#FFEFD9' },
+      { id: 'workflow',    label: 'Workflow',    hint: t('editor.hintWorkflow'),      icon: 'bi-diagram-3-fill',         color: '#FF2D55', soft: '#FCE5EB' }
     ]
   }
 ]
@@ -1558,16 +1567,16 @@ function estimateEta(progress) {
   // Giả định tổng ~12 phút cho 30s-720p preset
   const totalMin = 12
   const remainMin = totalMin * (1 - progress)
-  return remainMin < 1 ? '<1 phút' : `~${Math.ceil(remainMin)} phút`
+  return remainMin < 1 ? t('editor.etaUnder1Min') : t('editor.etaMinutes', { n: Math.ceil(remainMin) })
 }
 
 // ALD 24/05/2026 - Cancel fashion-motion job theo y/c user.
 async function onCancelFashionJob(jobId) {
   if (!jobId) return
   const ok = await useConfirm().ask({
-    title: 'Huỷ job đang chạy?',
-    message: 'Worker sẽ stop và xóa job. Không thể khôi phục.',
-    confirmText: 'Huỷ job',
+    title: t('editor.cancelJobConfirmTitle'),
+    message: t('editor.cancelJobConfirmMsg'),
+    confirmText: t('editor.cancelJob'),
     variant: 'danger',
   })
   if (!ok) return
@@ -1578,18 +1587,18 @@ async function onCancelFashionJob(jobId) {
     const kind = entry?.output?.metadata?.kind || 'fashion-motion'
     const endpoint = kind === 'motion' ? 'motion-jobs' : 'fashion-motion-jobs'
     await auth.apiFetch(`/functions/v1/${endpoint}/${jobId}`, { method: 'DELETE' })
-    toast.success('Đã yêu cầu huỷ job', { duration: 3000 })
+    toast.success(t('editor.toastJobCancelRequested'), { duration: 3000 })
     if (fmStreamInstance) fmStreamInstance.unsubscribe(jobId)
     // Mark entry locally
     if (entry) {
       patchEntry(entry.id, {
         status: 'error',
-        error: 'Cancelled bởi user',
+        error: t('editor.errCancelledByUser'),
         output: { ...entry.output, metadata: { ...entry.output.metadata, pending: false, job_status: 'cancelled' } },
       })
     }
   } catch (e) {
-    toast.error(`Không huỷ được: ${e?.message || e}`, { duration: 5000 })
+    toast.error(t('editor.toastCancelFailed', { err: e?.message || e }), { duration: 5000 })
   }
 }
 const currentNodeStyle = computed(() => ALL_TYPES.find((t) => t.id === selectedNode.value?.data?.type) || { color: '#8E8E93', soft: '#EFEFF4', icon: 'bi-circle', label: '?' })
@@ -1748,9 +1757,9 @@ async function buildBdsPipeline() {
   const existing = nodes.value.filter((n) => n.data?.config?._gen === 'bds')
   if (existing.length) {
     const ok = await confirmDialog.ask({
-      title: 'Dựng lại pipeline BĐS?',
-      message: 'Canvas đã có pipeline BĐS tự sinh. Dựng lại sẽ XOÁ các node tự sinh cũ (kèm prompt đã chỉnh) rồi tạo mới.',
-      confirmText: 'Dựng lại', cancelText: 'Huỷ', variant: 'danger',
+      title: t('editor.bdsRebuildTitle'),
+      message: t('editor.bdsRebuildMsg'),
+      confirmText: t('editor.rebuild'), cancelText: t('editor.cancel'), variant: 'danger',
     })
     if (!ok) return
     const gid = new Set(existing.map((n) => n.id))
@@ -1770,7 +1779,7 @@ async function buildBdsPipeline() {
   const newNodes = [], newEdges = [], tails = []
   // 1 ẢNH ĐẦU VÀO DUY NHẤT (nhà hoàn thiện) → tỏa vào các công đoạn (engine hỗ trợ fan-out vào node đa-input).
   const inId = nid('in', 0)
-  newNodes.push({ id: inId, type: 'step', position: { x: X0, y: midY }, data: { type: 'input', config: { contentType: 'image', source: 'session', field: 'image', label: 'Ảnh nhà hoàn thiện', staticData: '', staticMime: '', staticName: '', _gen: 'bds' } } })
+  newNodes.push({ id: inId, type: 'step', position: { x: X0, y: midY }, data: { type: 'input', config: { contentType: 'image', source: 'session', field: 'image', label: t('editor.bdsInputLabel'), staticData: '', staticMime: '', staticName: '', _gen: 'bds' } } })
   for (let i = 1; i <= total; i++) {
     const st = allStages[i - 1] || {}
     const y = Y0 + (i - 1) * ROW
@@ -1847,7 +1856,7 @@ function onConnect(connection) {
     className = label === 'true' ? 'edge-true' : 'edge-false'
     const dup = edges.value.find((e) => e.source === connection.source && e.sourceHandle === label)
     if (dup) {
-      toast.error(`Nhánh "${label}" đã có edge.`)
+      toast.error(t('editor.toastBranchHasEdge', { label }))
       return
     }
   }
@@ -1857,7 +1866,7 @@ function onConnect(connection) {
     className = label === 'error' ? 'edge-error' : 'edge-success'
     const dup = edges.value.find((e) => e.source === connection.source && e.sourceHandle === label)
     if (dup) {
-      toast.error(`Nhánh "${label}" đã có edge.`)
+      toast.error(t('editor.toastBranchHasEdge', { label }))
       return
     }
   }
@@ -1935,12 +1944,12 @@ async function onSave() {
     await wf.update(route.params.id, { definition: toSave })
     savedDefinition.value = toSave
     if (strippedLegacy > 0) {
-      toast.warning(`${strippedLegacy} file static legacy chưa có staticUrl — re-upload để persist qua reload.`, { duration: 6000 })
+      toast.warning(t('editor.toastStaticLegacy', { n: strippedLegacy }), { duration: 6000 })
     } else {
-      toast.success('Đã lưu')
+      toast.success(t('editor.toastSaved'))
     }
   } catch (err) {
-    toast.error(err.data?.error || err.message || 'Lưu thất bại')
+    toast.error(err.data?.error || err.message || t('editor.toastSaveFailed'))
   } finally {
     saving.value = false
     if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
@@ -1974,8 +1983,6 @@ const hasActiveRun = computed(() => testHistory.value.some((r) => r.status === '
 // phía trên canvas; run xong giữ tab tới khi user bấm ✕ (entry vẫn nằm trong history drawer). Tab
 // "Soạn thảo" = về chế độ edit (selectedRunId=null). Poll nền đã sẵn: chỉ run đang chọn mới chiếu lên
 // canvas (projection watcher key theo selectedRunId), các run khác poll ngầm.
-const MAX_CONCURRENT_RUNS = 3
-const runningCount = computed(() => testHistory.value.filter((r) => r.status === 'running').length)
 const openTabIds = ref([])
 const runTabs = computed(() => {
   const ids = []
@@ -2000,7 +2007,7 @@ function newBlankSession() {
   _exitSnapshot()            // khôi phục canvas đang sửa nếu đang xem snapshot 1 run
   selectedRunId.value = null
   selectedNodeId.value = null
-  toast.info('Phiên soạn thảo mới — chỉnh prompt rồi bấm "Chạy workflow" để chạy.', { duration: 3000 })
+  toast.info(t('editor.toastNewSession'), { duration: 3000 })
 }
 function closeRunTab(id) {
   openTabIds.value = openTabIds.value.filter((x) => x !== id)
@@ -2026,7 +2033,7 @@ function validateLibraryInputs() {
   })
   if (missing.length === 0) return true
   const names = missing.map((n) => `"${n.data.config?.label || n.data?.type || n.id}"`).join(', ')
-  toast.error(`Input ${names} đang dùng Library source nhưng chưa chọn file. Mở inspector pick lại trước khi chạy.`, { duration: 6000 })
+  toast.error(t('editor.toastLibraryInputMissing', { names }), { duration: 6000 })
   return false
 }
 
@@ -2038,22 +2045,7 @@ async function openTestRun() {
     selectedRunId.value = null
     await nextTick()
   }
-  // ALD 12/06/2026 - cho chạy SONG SONG nhiều run (multi-run tab); chỉ chặn khi vượt trần.
-  if (runningCount.value >= MAX_CONCURRENT_RUNS) {
-    toast.warning(`Đang có ${runningCount.value} run chạy song song (tối đa ${MAX_CONCURRENT_RUNS}). Đợi bớt hoặc Cancel rồi chạy thêm.`, { duration: 4000 })
-    return
-  }
-  // Đang có run khác → HỎI trước khi bắn thêm job (feedback 12/06: "click kia chạy thêm cái job đó luôn").
-  if (runningCount.value > 0) {
-    const ok = await confirmDialog.ask({
-      title: 'Chạy thêm run mới?',
-      message: `Đang có ${runningCount.value} run chạy nền. Chạy thêm 1 run song song nữa?`,
-      confirmText: 'Chạy thêm',
-      cancelText: 'Huỷ',
-      variant: 'primary',
-    })
-    if (!ok) return
-  }
+  // ALD 18/06/2026 - FE-only: KHÔNG giới hạn số run song song (chạy bao nhiêu luồng cũng được).
   if (!validateLibraryInputs()) return
   // ALD 24/05/2026 - Workflow không có session input → confirm trước khi run thay vì
   // chạy thẳng. Tránh accidental Enter trên focused CTA button kick job nặng.
@@ -2062,10 +2054,10 @@ async function openTestRun() {
     const hasHeavyNode = nodes.value.some((n) => n.data?.type === 'fashion-motion' || n.data?.type === 'motion')
     if (hasHeavyNode) {
       const ok = await confirmDialog.ask({
-        title: 'Chạy workflow?',
-        message: 'Workflow có node Fashion Motion / Motion Transfer — job nặng (~6-22 phút GPU). Xác nhận chạy?',
-        confirmText: 'Chạy',
-        cancelText: 'Huỷ',
+        title: t('editor.runConfirmTitle'),
+        message: t('editor.runConfirmHeavyMsg'),
+        confirmText: t('editor.run'),
+        cancelText: t('editor.cancel'),
         variant: 'primary',
       })
       if (!ok) return
@@ -2083,37 +2075,20 @@ async function openTestRun() {
 // huỷ tiến trình. Trước đây chỉ patch FE local entry → server không
 // biết → job vẫn chạy nốt 8-22 phút → user spam Cancel + Run mới → 3 jobs
 // concurrent → server load 297 + sshd starve.
+// ALD 18/06/2026 - FE-only: cancel = ghi status='cancelled' vào run record cục bộ + dừng poll.
+// Engine đọc cờ này (hoặc đơn giản là FE không còn theo dõi). KHÔNG gọi backend.
 async function cancelRun(entry) {
   if (!entry || (entry.status !== 'running' && entry.status !== 'queued')) return
   const runId = entry._runId || entry.id
-  // Mark UI ngay (optimistic) — BE call async sau
-  patchEntry(entry.id, {
-    status: 'error',
-    error: 'Đang cancel...',
-    _live: false,
-    durationMs: Date.now() - entry.ts,
-  })
+  patchEntry(entry.id, { status: 'cancelled', error: t('editor.errCancelled'), _live: false, durationMs: Date.now() - entry.ts })
   testRunning.value = false
   runningStartTs.value = 0
   try {
-    const auth = useAuth()
-    const res = await auth.beFetch(`/workflows/runs/${runId}/cancel`, { method: 'POST' })
-    const cascadedMotion = res?.cascaded?.motion_jobs?.length || 0
-    const cascadedFashion = res?.cascaded?.fashion_motion_jobs?.length || 0
-    const total = cascadedMotion + cascadedFashion
-    patchEntry(entry.id, {
-      status: 'error',
-      error: total > 0
-        ? `Cancelled. ${cascadedMotion} motion + ${cascadedFashion} tryon job dừng (worker sẽ interrupt trong 2s).`
-        : 'Cancelled. Không tìm thấy GPU job link với run này.',
-    })
-    toast.success(`Đã cancel (${total} GPU job dừng theo)`, { duration: 4000 })
+    const run = await wf.getRun(runId)
+    if (run) await db.put('workflow_runs', { ...run, status: 'cancelled' })
+    toast.success(t('editor.toastRunCancelled'), { duration: 2500 })
   } catch (e) {
-    patchEntry(entry.id, {
-      status: 'error',
-      error: `Cancel fail: ${e?.data?.error || e?.message || e}. Vui lòng reload + check workflow_runs.`,
-    })
-    toast.error(`Cancel fail: ${e?.message || e}`, { duration: 6000 })
+    toast.error(t('editor.toastCancelError', { err: e?.message || e }), { duration: 4000 })
   }
 }
 
@@ -2250,7 +2225,7 @@ async function pollRunUntilDone(entryId, runId, startTs) {
           pollPendingFashionMotion(entryId, meta.job_id, outputNodeRaw?.id, { kind: meta.kind })
         }
       }
-      if (run.status === 'error' && selectedRunId.value === entryId) toast.error(run.error_msg || 'Workflow lỗi', { duration: 5000 })
+      if (run.status === 'error' && selectedRunId.value === entryId) toast.error(run.error_msg || t('editor.toastWorkflowError'), { duration: 5000 })
       testRunning.value = false
       runningStartTs.value = 0
       _activePolls.delete(entryId)
@@ -2265,11 +2240,11 @@ async function pollRunUntilDone(entryId, runId, startTs) {
 // nên giữa các mốc đó FE tự nội suy + xoay caption để UX không bị stuck "30%" 10 phút.
 // Tổng ETA expected ~12 phút cho 30s-720p (sampler ~10 phút).
 const FM_STAGES = [
-  { p: 0.05, label: 'Đang gửi yêu cầu tới provider…' },
-  { p: 0.25, label: 'Provider đang xử lý ảnh…' },
-  { p: 0.55, label: 'Provider đang dựng video…' },
-  { p: 0.85, label: 'Hoàn thiện kết quả…' },
-  { p: 0.99, label: 'Sắp xong…' }
+  { p: 0.05, label: t('editor.fmStageSending') },
+  { p: 0.25, label: t('editor.fmStageProcessingImage') },
+  { p: 0.55, label: t('editor.fmStageBuildingVideo') },
+  { p: 0.85, label: t('editor.fmStageFinishing') },
+  { p: 0.99, label: t('editor.fmStageAlmostDone') }
 ]
 function fmStageFor(elapsed, totalMs = 12 * 60 * 1000) {
   const r = Math.min(0.99, elapsed / totalMs)
@@ -2296,7 +2271,7 @@ async function pollPendingFashionMotion(entryId, jobId, outputNodeId, opts = {})
   let lastSyntheticTs = 0
   let sawRunning = false  // chỉ toast terminal khi đã thấy job running ít nhất 1 lần trong phiên
   if (!opts.isResume) {
-    toast.info(`Fashion Motion đang xử lý (ETA 6-22 phút)…`, { duration: 4000 })
+    toast.info(t('editor.toastFmProcessing'), { duration: 4000 })
   }
   // Apply một snapshot data (từ SSE status event) lên node + entry
   function applySnapshot(data) {
@@ -2392,13 +2367,13 @@ async function pollPendingFashionMotion(entryId, jobId, outputNodeId, opts = {})
           },
         })
       }
-      if (shouldToast) toast.success('Fashion Motion hoàn tất!', { duration: 5000 })
+      if (shouldToast) toast.success(t('editor.toastFmDone'), { duration: 5000 })
       // ALD 25/05/2026 - Push notification cho job done. Persist qua localStorage,
       // hiện ở bell icon trên top bar layout (mọi page). Click noti → navigate workflow.
       if (sawRunning) noti.push({
         kind: 'done',
-        title: 'Fashion Motion hoàn tất',
-        body: `Job ${jobId.slice(0, 8)} · ${isImage ? 'ảnh tryon' : 'video'} sẵn sàng`,
+        title: t('editor.notiFmDoneTitle'),
+        body: t('editor.notiFmDoneBody', { job: jobId.slice(0, 8), kind: isImage ? t('editor.kindTryonImage') : t('editor.kindVideo') }),
         jobId,
         workflowId: route.params.id,
       })
@@ -2410,18 +2385,18 @@ async function pollPendingFashionMotion(entryId, jobId, outputNodeId, opts = {})
       const entryErr = testHistory.value.find((r) => r.id === entryId)
       if (entryErr) patchEntry(entryId, {
         status: 'error',
-        error: data.error || 'Fashion Motion job error',
+        error: data.error || t('editor.errFmJob'),
         // ALD 24/05/2026 - Clear pending flag để drawer "Job đang chạy" ẩn đi.
         output: {
           ...(entryErr.output || {}),
           metadata: { ...(entryErr.output?.metadata || {}), pending: false, job_status: 'error' },
         },
       })
-      if (shouldToast) toast.error(`Fashion Motion lỗi: ${data.error || ''}`, { duration: 6000 })
+      if (shouldToast) toast.error(t('editor.toastFmError', { err: data.error || '' }), { duration: 6000 })
       if (sawRunning) noti.push({
         kind: 'error',
-        title: 'Fashion Motion lỗi',
-        body: (data.error || 'Job thất bại').split('\n')[0].slice(0, 120),
+        title: t('editor.notiFmErrorTitle'),
+        body: (data.error || t('editor.jobFailed')).split('\n')[0].slice(0, 120),
         jobId,
         workflowId: route.params.id,
       })
@@ -2433,17 +2408,17 @@ async function pollPendingFashionMotion(entryId, jobId, outputNodeId, opts = {})
       const entryCanc = testHistory.value.find((r) => r.id === entryId)
       if (entryCanc) patchEntry(entryId, {
         status: 'error',
-        error: 'Job đã huỷ',
+        error: t('editor.errJobCancelled'),
         output: {
           ...(entryCanc.output || {}),
           metadata: { ...(entryCanc.output?.metadata || {}), pending: false, job_status: 'cancelled' },
         },
       })
-      if (shouldToast) toast.info('Fashion Motion đã huỷ', { duration: 4000 })
+      if (shouldToast) toast.info(t('editor.toastFmCancelled'), { duration: 4000 })
       if (sawRunning) noti.push({
         kind: 'cancel',
-        title: 'Fashion Motion đã huỷ',
-        body: `Job ${jobId.slice(0, 8)} cancelled bởi user`,
+        title: t('editor.notiFmCancelledTitle'),
+        body: t('editor.notiFmCancelledBody', { job: jobId.slice(0, 8) }),
         jobId,
         workflowId: route.params.id,
       })
@@ -2513,7 +2488,7 @@ async function doTestRun() {
   if (totalBytes > STATIC_TOTAL_LIMIT) {
     const mb = (totalBytes / 1024 / 1024).toFixed(1)
     toast.error(
-      `Tổng file static ${mb}MB > 25MB. Upload qua /storage → đổi node source = Library để chạy workflow.`,
+      t('editor.toastStaticTooBig', { mb }),
       { duration: 8000 }
     )
     testRunning.value = false
@@ -2550,12 +2525,12 @@ async function doTestRun() {
   try {
     const kick = await wf.test(route.params.id, sendDef, input, { resume: resumeFlag })
     runId = kick?.run_id
-    if (!runId) throw new Error('Server không trả run_id')
+    if (!runId) throw new Error(t('editor.errNoRunId'))
     patchEntry(entryId, { _runId: runId })
   } catch (err) {
     const errMsg = (err?.name === 'AbortError' || err?.name === 'TimeoutError')
-      ? 'Kick test timeout — kiểm tra server.'
-      : (err?.message?.includes('Failed to fetch') ? `Mất kết nối tới server: ${err.message}` : (err?.data?.error || err?.message || 'Kick fail không rõ'))
+      ? t('editor.errKickTimeout')
+      : (err?.message?.includes('Failed to fetch') ? t('editor.errLostConnection', { msg: err.message }) : (err?.data?.error || err?.message || t('editor.errKickUnknown')))
     patchEntry(entryId, { status: 'error', error: errMsg, durationMs: Date.now() - startTs, _live: false })
     toast.error(errMsg, { duration: 6000 })
     testRunning.value = false
@@ -2641,154 +2616,39 @@ function currentDefinition() {
 // loadTestHistory() fetch list từ /workflows/:id/runs (đã include output + events).
 // persistTestHistory() KHÔNG còn lưu localStorage — engine tự update workflow_runs khi
 // emit events. Chỉ giữ localStorage làm offline fallback (legacy compat).
+// ALD 18/06/2026 - FE-only: nạp run từ local db ([[useWorkflows]].listRuns), KHÔNG gọi backend.
 async function loadTestHistory() {
   try {
-    const auth = useAuth()
-    const res = await auth.beFetch(`/workflows/${route.params.id}/runs`)
-    const items = res?.items || []
-    // Convert workflow_runs row → testHistory entry shape (BE -> FE mapping)
-    testHistory.value = items.map((row) => {
-      // ALD 24/05/2026 - Workflow_runs.status='success' nhưng output.metadata.pending=true
-      // → async job (fashion-motion) chưa xong. UI phải hiện 'Running' badge nhất quán
-      // với drawer pending + sidebar widget, không phải 'OK' (gây hiểu lầm).
-      const m = row.output?.metadata
-      // ALD 24/05/2026 - Bug fix: row.status='cancelled' fallback thành 'running' badge.
-      // Trước: fallback `row.status === 'success' ? 'success' : 'running'` quy mọi state
-      // không-success về Running → cancelled hiển thị "15m2s elapsed". Giờ check explicit:
-      //   queued/running → running (UI poll), success → success, else → error (fail badge).
-      const isErrored = row.status === 'error' || (m && m.job_status === 'error')
-      const isCancelled = row.status === 'cancelled' || (m && m.job_status === 'cancelled')
-      const isInflight = row.status === 'queued' || row.status === 'running'
-      const isPending = m && m.pending === true && (m.job_status === 'queued' || m.job_status === 'running' || !m.job_status)
-      const derivedStatus = isErrored || isCancelled ? 'error'
-                          : row.status === 'success' && !isPending ? 'success'
-                          : isInflight || isPending ? 'running'
-                          : 'error'
-      return {
-        id: row.id,
-        _runId: row.id,
-        _live: isPending || row.status === 'queued' || row.status === 'running',
-        status: derivedStatus,
-        ts: new Date(row.started_at || row.finished_at || Date.now()).getTime(),
-        durationMs: row.finished_at && row.started_at && !isPending
-          ? new Date(row.finished_at).getTime() - new Date(row.started_at).getTime()
-          : null,
-        input: row.input || {},
-        output: row.output || null,
-        events: row.events || [],
-        error: row.error_msg || null,
-      }
-    })
-    // ALD 24/05/2026 - Reconcile stale pending fashion-motion entries: handler return
-    // sớm với pending=true nên workflow_runs.output không bao giờ flip về video URL khi
-    // worker xong. Check fashion_motion_jobs status thật để update entry locally.
-    reconcileStalePendingJobs()
+    const rows = await wf.listRuns(route.params.id)
+    testHistory.value = (rows || [])
+      .slice()
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .map((row) => {
+        const status = ['success', 'error', 'cancelled', 'running', 'queued'].includes(row.status) ? row.status : 'error'
+        const derivedStatus = status === 'queued' ? 'running' : status === 'cancelled' ? 'error' : status
+        const ts = new Date(row.created_at || Date.now()).getTime()
+        return {
+          id: row.id,
+          _runId: row.id,
+          _live: status === 'running' || status === 'queued',
+          status: derivedStatus,
+          ts,
+          durationMs: null,
+          input: row.input || {},
+          output: row.output || null,
+          events: row.events || [],
+          error: null,
+        }
+      })
   } catch (e) {
-    console.warn('[testHistory] fetch BE fail, fallback localStorage:', e)
-    try {
-      const raw = localStorage.getItem(`wf:test:${route.params.id}`)
-      if (raw) testHistory.value = JSON.parse(raw) || []
-    } catch { testHistory.value = [] }
+    console.warn('[testHistory] load local fail:', e?.message)
+    testHistory.value = []
   }
 }
 
-async function reconcileStalePendingJobs() {
-  const auth = useAuth()
-  // ALD 27/05/2026 - Bao gồm cả kind='motion' (Motion Transfer node). Trước đây chỉ
-  // filter 'fashion-motion' → motion-transfer pending entry không bao giờ reconcile,
-  // dù motion job đã done trong DB. User thấy entry status='success' (workflow_runs
-  // returned pending early) nhưng output vẫn `[pending] motion-transfer job ...`.
-  const stale = (testHistory.value || []).filter((r) => {
-    const m = r.output?.metadata
-    // Bỏ qua job đã kết luận done-nhưng-mất-output (đã mark error) → tránh re-poll vô ích.
-    if (m && m.job_status === 'done_no_output') return false
-    return m && m.job_id && (m.kind === 'fashion-motion' || m.kind === 'motion') && (m.pending || !m.video)
-  })
-  if (!stale.length) return
-  // Fetch song song job detail cho từng entry. Endpoint khác theo kind.
-  await Promise.all(stale.map(async (entry) => {
-    try {
-      const endpoint = entry.output.metadata.kind === 'motion' ? 'motion-jobs' : 'fashion-motion-jobs'
-      const job = await auth.apiFetch(`/functions/v1/${endpoint}/${entry.output.metadata.job_id}`)
-      if (!job) return
-      const wasPending = entry.output.metadata.pending
-      if (job.status === 'done' && job.output_url) {
-        // ALD 24/05/2026 - stop_after_tryon mode → output là PNG, set metadata.image.
-        // Bình thường output là MP4 → metadata.video. Detect theo extension.
-        const isImage = /\.(png|jpe?g|webp)(\?|$)/i.test(job.output_path || job.output_url)
-        patchEntry(entry.id, {
-          status: 'success',
-          output: {
-            ...entry.output,
-            text: job.output_url,
-            metadata: {
-              ...entry.output.metadata,
-              pending: false,
-              [isImage ? 'image' : 'video']: job.output_url,
-              output_path: job.output_path,
-              progress: 1,
-              job_status: 'done',
-            },
-          },
-        })
-      } else if (job.status === 'done' && !job.output_url) {
-        // ALD 29/05/2026 - Job DONE nhưng KHÔNG có output_url (file output thiếu / đã bị xoá /
-        // không ký được signed URL). TRƯỚC ĐÂY rơi qua MỌI nhánh → entry kẹt 'pending' →
-        // canvas hiện "processing" vô hạn thay vì video. Mark error rõ ràng để user chạy lại.
-        patchEntry(entry.id, {
-          status: 'error',
-          error: 'Job đã hoàn tất nhưng không tìm thấy file video output (có thể đã bị xoá hoặc lỗi upload). Vui lòng chạy lại.',
-          output: {
-            ...entry.output,
-            metadata: { ...entry.output.metadata, pending: false, job_status: 'done_no_output' },
-          },
-        })
-      } else if (job.status === 'error') {
-        patchEntry(entry.id, {
-          status: 'error',
-          error: job.error || 'Fashion Motion job failed',
-          output: {
-            ...entry.output,
-            metadata: { ...entry.output.metadata, pending: false, job_status: 'error' },
-          },
-        })
-      } else if (job.status === 'cancelled') {
-        patchEntry(entry.id, {
-          status: 'error',
-          error: 'Job cancelled',
-          output: {
-            ...entry.output,
-            metadata: { ...entry.output.metadata, pending: false, job_status: 'cancelled' },
-          },
-        })
-      }
-      // ALD 27/05/2026 - Stuck detection: job ở 'queued'/'running' với progress=0 quá
-      // STUCK_THRESHOLD_MS → worker không phản hồi (offline hoặc input file đã bị xoá).
-      // Auto-mark error để badge "Job đang chạy" ẩn đi + user thấy lý do thay vì loading vô hạn.
-      else if ((job.status === 'queued' || job.status === 'running') && (job.progress || 0) === 0) {
-        const STUCK_THRESHOLD_MS = 10 * 60 * 1000  // 10 phút
-        const elapsedMs = Date.now() - (entry.ts || 0)
-        if (elapsedMs > STUCK_THRESHOLD_MS) {
-          patchEntry(entry.id, {
-            status: 'error',
-            error: `Job stuck > ${Math.round(STUCK_THRESHOLD_MS / 60000)} phút ở 0% — worker không phản hồi. Có thể input/audio file đã bị xoá khỏi library. Cancel + chạy lại với asset hợp lệ.`,
-            output: {
-              ...entry.output,
-              metadata: { ...entry.output.metadata, pending: false, job_status: 'stuck' },
-            },
-          })
-        } else if (!wasPending) {
-          // Edge case: BE entry lost pending flag — restore (chỉ khi chưa stuck)
-          patchEntry(entry.id, {
-            output: { ...entry.output, metadata: { ...entry.output.metadata, pending: true, job_status: job.status } },
-          })
-        }
-      }
-    } catch (e) {
-      console.warn('[reconcile] fashion-motion-jobs fetch fail for entry', entry.id, e)
-    }
-  }))
-}
+// ALD 18/06/2026 - FE-only: không còn job async backend để reconcile. Engine chạy đồng bộ
+// trong browser; pollRunUntilDone đọc local db là đủ. Giữ hàm (no-op) để call-site không vỡ.
+async function reconcileStalePendingJobs() { return }
 // Local-only patch (đợi sync round-trip BE thì lag) — engine cũng tự lưu BE qua emit.
 function persistTestHistory() {
   try {
@@ -2802,24 +2662,21 @@ function persistTestHistory() {
 async function deleteSingleRun(run) {
   if (!run) return
   const ok = await confirmDialog.ask({
-    title: 'Xoá run này?',
-    message: `Xoá vĩnh viễn run ${fmtTime(run.ts)} (${run.status}). Không khôi phục được.`,
-    confirmText: 'Xoá',
-    cancelText: 'Huỷ',
+    title: t('editor.deleteRunTitle'),
+    message: t('editor.deleteRunMsg', { time: fmtTime(run.ts), status: run.status }),
+    confirmText: t('editor.delete'),
+    cancelText: t('editor.cancel'),
     variant: 'danger',
   })
   if (!ok) return
   try {
-    if (run._runId) {
-      const auth = useAuth()
-      await auth.beFetch(`/workflows/runs/${run._runId}`, { method: 'DELETE' })
-    }
+    if (run._runId) await db.remove('workflow_runs', run._runId)
     testHistory.value = testHistory.value.filter((r) => r.id !== run.id)
     if (selectedRunId.value === run.id) selectedRunId.value = testHistory.value[0]?.id || null
     persistTestHistory()
-    toast.success('Đã xoá run')
+    toast.success(t('editor.toastRunDeleted'))
   } catch (e) {
-    toast.error(`Xoá fail: ${e?.message || e}`)
+    toast.error(t('editor.toastDeleteFail', { err: e?.message || e }))
   }
 }
 
@@ -2828,24 +2685,26 @@ async function deleteSingleRun(run) {
 // cancelled) — runs còn queued/running giữ lại để FE vẫn theo dõi job đang chạy.
 async function clearTestHistory() {
   const ok = await confirmDialog.ask({
-    title: 'Xoá toàn bộ test history?',
-    message: `Sẽ xoá vĩnh viễn ${testHistory.value.length} run đã chạy của workflow này. Job đang chạy vẫn được giữ lại.`,
-    confirmText: 'Xoá',
-    cancelText: 'Huỷ',
+    title: t('editor.clearHistoryTitle'),
+    message: t('editor.clearHistoryMsg', { n: testHistory.value.length }),
+    confirmText: t('editor.delete'),
+    cancelText: t('editor.cancel'),
     variant: 'danger',
   })
   if (!ok) return
   try {
-    const auth = useAuth()
-    const res = await auth.beFetch(`/workflows/${route.params.id}/runs`, { method: 'DELETE' })
-    const deleted = res?.deleted ?? 0
-    // Giữ lại entries pending/running (BE chưa xoá), bỏ entries terminal
+    // FE-only: xoá run terminal khỏi local db; giữ run đang chạy.
+    const rows = await wf.listRuns(route.params.id)
+    let deleted = 0
+    for (const r of rows || []) {
+      if (r.status === 'running' || r.status === 'queued') continue
+      await db.remove('workflow_runs', r.id); deleted++
+    }
     testHistory.value = (testHistory.value || []).filter((r) => r.status === 'running' || r.status === 'queued')
     if (!testHistory.value.find((r) => r.id === selectedRunId.value)) selectedRunId.value = null
-    try { localStorage.removeItem(`wf:test:${route.params.id}`) } catch {}
-    toast.success(`Đã xoá ${deleted} test run`)
+    toast.success(t('editor.toastRunsDeleted', { n: deleted }))
   } catch (e) {
-    toast.error(`Xoá thất bại: ${e?.message || e}`)
+    toast.error(t('editor.toastDeleteFailed', { err: e?.message || e }))
   }
 }
 
@@ -2999,10 +2858,10 @@ ${headerLines}
 ${JSON.stringify(sample, null, 2)}`
 })
 
-function copyToClipboard(text, successMsg = 'Đã copy') {
+function copyToClipboard(text, successMsg) {
   navigator.clipboard.writeText(text).then(
-    () => toast.success(successMsg),
-    () => toast.error('Copy thất bại')
+    () => toast.success(successMsg || t('editor.toastCopied')),
+    () => toast.error(t('editor.toastCopyFailed'))
   )
 }
 
@@ -3017,7 +2876,7 @@ function downloadOutput(run) {
   document.body.appendChild(a)
   a.click()
   setTimeout(() => { URL.revokeObjectURL(url); a.remove() }, 100)
-  toast.success(`Đã tải ${run.output.text.length.toLocaleString()} chars`)
+  toast.success(t('editor.toastDownloadedChars', { n: run.output.text.length.toLocaleString() }))
 }
 
 async function saveAsyncConfig() {
@@ -3026,11 +2885,11 @@ async function saveAsyncConfig() {
   if (asyncConfig.async_enabled) {
     const u = String(asyncConfig.callback_url || '').trim()
     if (!u) {
-      toast.error('Vui lòng nhập Callback URL')
+      toast.error(t('editor.toastCallbackUrlRequired'))
       return
     }
     if (!/^https?:\/\//i.test(u)) {
-      toast.error('Callback URL phải bắt đầu bằng http:// hoặc https://')
+      toast.error(t('editor.toastCallbackUrlScheme'))
       return
     }
   }
@@ -3043,10 +2902,10 @@ async function saveAsyncConfig() {
     }
     const updated = await wf.update(route.params.id, patch)
     if (updated) workflow.value = { ...workflow.value, ...updated }
-    toast.success('Đã lưu config async')
+    toast.success(t('editor.toastAsyncConfigSaved'))
     asyncModalOpen.value = false
   } catch (err) {
-    toast.error(err.data?.error || err.message || 'Lưu thất bại')
+    toast.error(err.data?.error || err.message || t('editor.toastSaveFailed'))
   } finally {
     asyncSaving.value = false
   }
@@ -3287,6 +3146,7 @@ function inspectorComponent(type) {
 }
 .apl-palette-text { min-width: 0; flex: 1; line-height: 1.1; }
 .apl-palette-label { display: block; font-size: 12px; font-weight: 600; color: var(--apl-label); letter-spacing: -0.01em; }
+.apl-palette-en { margin-left: 5px; font-size: 10px; font-weight: 500; font-style: italic; color: rgba(60,60,67,0.45); letter-spacing: 0; }
 .apl-palette-hint  { display: block; font-size: 10.5px; color: var(--apl-label-2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .apl-empty { font-size: 12px; color: var(--apl-label-3); text-align: center; padding: 12px; font-style: italic; }
 

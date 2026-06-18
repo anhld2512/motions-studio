@@ -54,8 +54,20 @@ export function useWorkflowEngine() {
       events.push({ ts: new Date().toISOString(), node_id, level, msg, ...(extra ? { extra } : {}) })
       await _save('running')
     }
+    // Lưu KHÔNG được phép throw ra ngoài: nếu fail (vd localStorage đầy) → thử lại với events gọn (bỏ extra nặng).
+    // Mục tiêu: run LUÔN tới được trạng thái cuối (success/error), không kẹt "running".
     const _save = async (status) => {
-      await db.put('workflow_runs', { ...runRec, status, events, output: { ...(runRec.output || {}), metadata: outputMeta } })
+      const rec = { ...runRec, status, events, output: { ...(runRec.output || {}), metadata: outputMeta } }
+      try {
+        await db.put('workflow_runs', rec)
+      } catch (err) {
+        try {
+          const lean = events.map((e) => (e.extra ? { ...e, extra: undefined } : e))
+          await db.put('workflow_runs', { ...rec, events: lean })
+        } catch (e2) {
+          console.warn('[engine] _save fail (bỏ qua, vẫn tiếp tục):', e2?.message || e2)
+        }
+      }
     }
 
     // gom input upstream của 1 node → { byHandle: {handle: out}, list: [out...] }
@@ -195,7 +207,7 @@ export function useWorkflowEngine() {
       await _save('success')
     } catch (e) {
       events.push({ ts: new Date().toISOString(), level: 'error', msg: 'Lỗi: ' + (e?.message || e) })
-      await db.put('workflow_runs', { ...runRec, status: 'error', events, output: { ...(runRec.output || {}), metadata: outputMeta } })
+      await _save('error')
     }
   }
 

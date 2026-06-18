@@ -58,41 +58,41 @@
         :href="img.url"
         target="_blank"
         class="apl-preview-grid-item"
-        :title="img.label || `Ảnh ${idx + 1}`"
+        :title="img.label || t('flowNode.imageN', { n: idx + 1 })"
         @click.stop
       >
-        <img :src="img.url" alt="" @load="_syncHandles" />
-        <span>{{ img.label || `Ảnh ${idx + 1}` }}</span>
+        <img :src="msrc(img.url)" alt="" @load="_syncHandles" />
+        <span>{{ img.label || t('flowNode.imageN', { n: idx + 1 }) }}</span>
       </a>
       <button
         v-if="isOutputResult"
         type="button"
         class="apl-download-btn"
-        title="Tải ảnh đầu tiên"
+        :title="t('flowNode.downloadFirst')"
         @click.stop="onDownload"
       >
         <i class="bi bi-download" />
       </button>
     </div>
     <div v-else-if="previewSrc && !previewIsAudio" class="apl-preview" :style="aspectStyle">
-      <video v-if="previewIsVideo" :src="previewSrc" muted playsinline preload="metadata" controls @loadedmetadata="_syncHandles" />
-      <img   v-else                :src="previewSrc" alt="" @load="_syncHandles" />
+      <video v-if="previewIsVideo" :src="previewSrcResolved" muted playsinline preload="metadata" controls @loadedmetadata="_syncHandles" />
+      <img   v-else                :src="previewSrcResolved" alt="" @load="_syncHandles" />
       <button
         v-if="isOutputResult"
         type="button"
         class="apl-download-btn"
-        title="Tải về"
+        :title="t('flowNode.download')"
         @click.stop="onDownload"
       >
         <i class="bi bi-download" />
       </button>
     </div>
     <div v-else-if="previewIsAudio && previewSrc" class="apl-preview apl-preview-audio">
-      <audio :src="previewSrc" controls preload="metadata" @click.stop />
+      <audio :src="previewSrcResolved" controls preload="metadata" @click.stop />
     </div>
     <div v-else-if="showOutputPlaceholder" class="apl-preview apl-preview-placeholder" :style="aspectStyle">
       <i :class="['bi', isOutputRunning ? 'bi-camera-reels animate-pulse' : 'bi-camera-reels']" />
-      <span>{{ isOutputRunning ? 'Đang xử lý…' : 'Kết quả sẽ hiển thị ở đây' }}</span>
+      <span>{{ isOutputRunning ? t('flowNode.processing') : t('flowNode.resultHere') }}</span>
     </div>
 
     <div class="apl-body">
@@ -101,6 +101,7 @@
       </span>
       <div class="apl-text">
         <div class="apl-label">{{ label }}</div>
+        <div v-if="labelEn" class="apl-label-en">{{ labelEn }}</div>
         <div :class="['apl-subtitle', !isConfigured && 'empty']" :title="subtitleTitle">
           <!-- ALD 11/06/2026 - Đang chạy/chờ/xong → chỉ hiện trạng thái (Processing/Waiting/Done), KHÔNG hiện model AI. -->
           <template v-if="runStateLabel">{{ runStateLabel }}</template>
@@ -110,7 +111,7 @@
             <span v-if="data.config?.aspectRatio">{{ data.config.aspectRatio }}</span>
             <span v-if="data.config?.saveIntermediate" class="opacity-60">· +tryon</span>
           </template>
-          <template v-else>{{ subtitle || 'Chưa cấu hình' }}</template>
+          <template v-else>{{ subtitle || t('flowNode.notConfigured') }}</template>
         </div>
       </div>
     </div>
@@ -168,6 +169,8 @@
 
 <script setup>
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
+
+const { t } = useI18n()
 
 const props = defineProps({
   id: { type: String, default: '' },
@@ -247,18 +250,52 @@ const meta = computed(() => {
 const icon = computed(() => meta.value.icon)
 // ALD 24/05/2026 - Ưu tiên config.label do user/seed đặt (vd "Ảnh người mẫu", "Video motion")
 // để phân biệt nhiều input cùng loại trong 1 workflow. Fallback về meta.label.
+// ALD 18/06/2026 - Nhãn SONG NGỮ: dòng chính tiếng Việt, dòng phụ tiếng Anh.
+const NODE_BIL = {
+  input: { vi: 'Đầu vào', en: 'Input' },
+  validate: { vi: 'Kiểm tra', en: 'Validate' },
+  motion: { vi: 'Điều khiển chuyển động', en: 'Motion Control' },
+  tryon: { vi: 'Thử đồ', en: 'Try-on' },
+  'create-image': { vi: 'Tạo ảnh', en: 'Create Image' },
+  compose: { vi: 'Ghép vào mẫu', en: 'Compose' },
+  'fashion-motion': { vi: 'Thời trang chuyển động', en: 'Fashion Motion' },
+  teaser: { vi: 'Teaser', en: 'Teaser' },
+  'text-to-video': { vi: 'Văn bản → Video', en: 'Text to Video' },
+  ss: { vi: 'Ảnh → Video', en: 'Image to Video' },
+  'wan-i2v': { vi: 'Ảnh đầu → cuối', en: 'First-Last Frame' },
+  talk: { vi: 'Nói (lip-sync)', en: 'Talking Head' },
+  voiceover: { vi: 'Lồng tiếng', en: 'Voiceover' },
+  concat: { vi: 'Ghép cảnh', en: 'Concatenate' },
+  subtitle: { vi: 'Phụ đề / Dịch', en: 'Subtitle' },
+  bds: { vi: 'Tua nhanh xây dựng', en: 'Time-lapse' },
+  debug: { vi: 'Gỡ lỗi', en: 'Debug' },
+  http: { vi: 'Gọi HTTP', en: 'HTTP' },
+  workflow: { vi: 'Workflow con', en: 'Sub-workflow' },
+  condition: { vi: 'Điều kiện', en: 'Condition' },
+  output: { vi: 'Kết quả', en: 'Output' }
+}
+const { lang } = useLang()
 const label = computed(() => {
   const custom = props.data.config?.label
   if (custom && String(custom).trim()) return String(custom).trim()
+  const bil = NODE_BIL[props.data.type]
+  if (bil) return lang.value === 'en' ? bil.en : bil.vi
   return meta.value.label
+})
+// Dòng phụ = ngôn ngữ còn lại (tham chiếu nhanh), ẩn khi node có nhãn tuỳ chỉnh.
+const labelEn = computed(() => {
+  if (props.data.config?.label) return ''
+  const bil = NODE_BIL[props.data.type]
+  if (!bil) return ''
+  return lang.value === 'en' ? bil.vi : bil.en
 })
 const accent = computed(() => meta.value.accent)
 const accentSoft = computed(() => meta.value.accentSoft)
 const accentText = computed(() => meta.value.accentText)
 
 // ALD 11/06/2026 - Khi node đang chạy/chờ/xong → subtitle chỉ hiện TRẠNG THÁI (không hiện model AI/config).
-const RUN_STATE_LABEL = { queued: 'Waiting', running: 'Processing', success: 'Done', error: 'Error', warn: 'Warning' }
-const runStateLabel = computed(() => RUN_STATE_LABEL[props.data._runState] || '')
+const RUN_STATE_KEY = { queued: 'waiting', running: 'processingShort', success: 'done', error: 'error', warn: 'warning' }
+const runStateLabel = computed(() => RUN_STATE_KEY[props.data._runState] ? t(`flowNode.${RUN_STATE_KEY[props.data._runState]}`) : '')
 
 const subtitle = computed(() => {
   const c = props.data.config || {}
@@ -278,7 +315,7 @@ const subtitle = computed(() => {
       // Subtitle text fallback (title attr + accessibility). Visual render dùng icon Bootstrap
       // qua template ngoài (xem template apl-subtitle với data.type === 'fashion-motion').
       const parts = [c.preset || '15s-720p']
-      const garmentLabel = { upper: 'Áo', lower: 'Quần', dress: 'Váy', bikini: 'Bikini', accessory: 'Phụ kiện' }[c.garmentType]
+      const garmentLabel = { upper: t('flowNode.garmentUpper'), lower: t('flowNode.garmentLower'), dress: t('flowNode.garmentDress'), bikini: t('flowNode.garmentBikini'), accessory: t('flowNode.garmentAccessory') }[c.garmentType]
       if (garmentLabel) parts.push(garmentLabel)
       if (c.aspectRatio) parts.push(c.aspectRatio)
       if (c.saveIntermediate) parts.push('+tryon')
@@ -286,8 +323,8 @@ const subtitle = computed(() => {
     }
     case 'tryon': {
       // ALD 11/06/2026 - KHÔNG hiện engine (provider). Chỉ loại đồ.
-      const garmentLabel = { upper: 'Áo', lower: 'Quần', dress: 'Váy', set: 'Set', bikini: 'Bikini', accessory: 'Phụ kiện' }[c.garmentType]
-      return garmentLabel || 'Thử đồ'
+      const garmentLabel = { upper: t('flowNode.garmentUpper'), lower: t('flowNode.garmentLower'), dress: t('flowNode.garmentDress'), set: t('flowNode.garmentSet'), bikini: t('flowNode.garmentBikini'), accessory: t('flowNode.garmentAccessory') }[c.garmentType]
+      return garmentLabel || t('flowNode.tryon')
     }
     case 'create-image': {
       // ALD 11/06/2026 - KHÔNG hiện engine. Chỉ mô tả.
@@ -295,7 +332,7 @@ const subtitle = computed(() => {
         const p = c.prompt.trim()
         return p.length > 36 ? p.slice(0, 36) + '…' : p
       }
-      return '— chưa có mô tả'
+      return t('flowNode.noDescription')
     }
     case 'workflow':  return c.slug ? `/${c.slug}` : '— no slug'
     case 'condition': return c.expression || '— no expression'
@@ -318,23 +355,23 @@ const subtitle = computed(() => {
     case 'teaser': {
       const parts = []
       if (c.targetDurationSec) parts.push(`${c.targetDurationSec}s`)
-      parts.push(`${Math.max(1, Math.min(6, Number(c.productCount) || 1))} ảnh`)
-      if (Number(c.modelCount) > 0) parts.push(`${c.modelCount} mẫu`)
+      parts.push(t('flowNode.nImages', { n: Math.max(1, Math.min(6, Number(c.productCount) || 1)) }))
+      if (Number(c.modelCount) > 0) parts.push(t('flowNode.nModels', { n: c.modelCount }))
       if (c.aiDirector !== false) parts.push('AI')
       return parts.join(' · ')
     }
     case 'compose': {
       const np = Math.max(1, Math.min(2, Number(c.personCount) || 1))
-      return `mẫu + ${np} ${c.subjectKind === 'product' ? 'SP' : 'người'}`
+      return t('flowNode.composeSummary', { n: np, kind: c.subjectKind === 'product' ? t('flowNode.subjectProduct') : t('flowNode.subjectPerson') })
     }
     case 'talk': {
-      const v = (c.voice || '').includes('Puck') || (c.voice || '').includes('Charon') ? 'giọng nam'
-        : (c.voice || '').includes('Aoede') || (c.voice || '').includes('Kore') ? 'giọng nữ'
-        : (c.voice || 'mặc định')
+      const v = (c.voice || '').includes('Puck') || (c.voice || '').includes('Charon') ? t('flowNode.voiceMale')
+        : (c.voice || '').includes('Aoede') || (c.voice || '').includes('Kore') ? t('flowNode.voiceFemale')
+        : (c.voice || t('flowNode.voiceDefault'))
       const l = (c.line || '').trim()
       return `${v}${l ? ' · ' + (l.length > 22 ? l.slice(0, 22) + '…' : l) : ''}`
     }
-    case 'concat':    return 'ghép các cảnh (giữ tiếng)'
+    case 'concat':    return t('flowNode.concatSummary')
     default:          return ''
   }
 })
@@ -367,17 +404,17 @@ function inputSubtitle(c, type) {
   const source = c.source || 'session'
   if (source === 'session') return `session.${c.field || ct}`
   if (source === 'url') {
-    if (!c.url) return 'URL — chưa set'
+    if (!c.url) return t('flowNode.urlNotSet')
     try { return `URL · ${new URL(c.url).hostname}` } catch { return `URL · ${c.url.slice(0, 24)}` }
   }
   if (source === 'static') {
-    if (ct === 'text') return c.staticText ? `Static · "${c.staticText.slice(0, 18)}…"` : 'Static text — empty'
-    return c.staticName ? `Upload · ${c.staticName.slice(0, 22)}` : 'Upload — chưa chọn'
+    if (ct === 'text') return c.staticText ? `Static · "${c.staticText.slice(0, 18)}…"` : t('flowNode.staticTextEmpty')
+    return c.staticName ? `Upload · ${c.staticName.slice(0, 22)}` : t('flowNode.uploadNotChosen')
   }
   // ALD 24/05/2026 - Library source: hiện tên file đã pick (nếu config.label đã track),
   // fallback gọn "Library /audio" / "Library /storage" để node không hiện "Chưa cấu hình".
   if (source === 'library') {
-    if (!c.libraryId) return ct === 'audio' ? 'Library /audio — chưa pick' : 'Library /storage — chưa pick'
+    if (!c.libraryId) return ct === 'audio' ? t('flowNode.libraryAudioNotPicked') : t('flowNode.libraryStorageNotPicked')
     return ct === 'audio' ? `Library /audio · ${String(c.libraryId).slice(0, 8)}` : `Library /storage · ${String(c.libraryId).slice(0, 8)}`
   }
   return ''
@@ -399,7 +436,7 @@ const garmentIconClass = computed(() => ({
   bikini: 'bi-water',
   accessory: 'bi-bag-heart-fill',
 }[props.data.config?.garmentType] || ''))
-const subtitleTitle = computed(() => subtitle.value || 'Chưa cấu hình')
+const subtitleTitle = computed(() => subtitle.value || t('flowNode.notConfigured'))
 
 // ALD 18/06/2026 - motions-studio FE-only: bỏ library backend. Input dùng staticUrl/data URL/URL trực tiếp.
 const libraryResolvedUrl = ref('')
@@ -408,6 +445,10 @@ const libraryResolvedUrl = ref('')
 // · Input: staticData (base64) → wrap data:URL; OR url field (skip nếu template `{{...}}`)
 // · Library: signed URL từ /audio (audio) / /storage (image/video/file)
 // · Output: data._runOutput.video / .image sau khi Test xong
+// ALD 18/06/2026 - resolve ref "idb://" (file lưu IndexedDB FE-only) → object URL để <img>/<video> hiển thị.
+const fileStore = useFileStore(); fileStore.load()
+const msrc = (u) => fileStore.mediaSrc(u)
+
 const previewSrc = computed(() => {
   const c = props.data.config || {}
   const t = props.data.type
@@ -447,6 +488,7 @@ const previewSrc = computed(() => {
   }
   return null
 })
+const previewSrcResolved = computed(() => msrc(previewSrc.value))
 const previewIsVideo = computed(() => {
   const c = props.data.config || {}
   const t = props.data.type
@@ -464,7 +506,7 @@ const outputImageGrid = computed(() => {
   const out = props.data._runOutput || {}
   const list = Array.isArray(out.images) ? out.images : []
   return list
-    .map((it, idx) => typeof it === 'string' ? { url: it, label: `Ảnh ${idx + 1}` } : it)
+    .map((it, idx) => typeof it === 'string' ? { url: it, label: t('flowNode.imageN', { n: idx + 1 }) } : it)
     .filter((it) => it?.url && !String(it.url).toLowerCase().endsWith('.mp4'))
 })
 // Output node placeholder: hiện skeleton khi đang chạy / queued, hoặc khi format=video
@@ -494,7 +536,7 @@ const aspectStyle = computed(() => {
   return { aspectRatio: `${w} / ${h}` }
 })
 async function onDownload() {
-  const src = previewSrc.value
+  const src = previewSrcResolved.value || previewSrc.value   // idb:// → object URL để tải được
   if (!src) return
   try {
     const res = await fetch(src)
@@ -541,23 +583,23 @@ const PRODUCT_PORT_COUNT = computed(() => {
 })
 const productPorts = (count) => Array.from({ length: count }, (_, i) => ({
   id: i === 0 ? 'product' : `product${i + 1}`,
-  label: count >= 2 ? `Ảnh SP ${i + 1}` : 'Sản phẩm'
+  label: count >= 2 ? t('flowNode.portProductN', { n: i + 1 }) : t('flowNode.portProduct')
 }))
 const FASHION_TARGETS = computed(() => [
-  { id: 'model',   label: 'Người mẫu' },
+  { id: 'model',   label: t('flowNode.portModel') },
   ...productPorts(PRODUCT_PORT_COUNT.value),
   { id: 'motion',  label: 'Motion' },
-  { id: 'audio',   label: 'Audio (opt)' }
+  { id: 'audio',   label: t('flowNode.portAudioOpt') }
 ])
 // Motion Transfer: 3 handles (image + motion + audio)
-const MOTION_TARGETS = [
-  { id: 'image',   label: 'Người mẫu' },
+const MOTION_TARGETS = computed(() => [
+  { id: 'image',   label: t('flowNode.portModel') },
   { id: 'motion',  label: 'Motion' },
-  { id: 'audio',   label: 'Audio (opt)' }
-]
+  { id: 'audio',   label: t('flowNode.portAudioOpt') }
+])
 // Tryon: model + 1-2 cổng sản phẩm. Output image (ảnh đã thay đồ).
 const TRYON_TARGETS = computed(() => [
-  { id: 'model',   label: 'Người mẫu' },
+  { id: 'model',   label: t('flowNode.portModel') },
   ...productPorts(PRODUCT_PORT_COUNT.value)
 ])
 // #endregion
@@ -574,7 +616,7 @@ const CREATE_IMAGE_TARGETS = computed(() => {
   const n = CREATE_IMAGE_COUNT.value
   return Array.from({ length: n }, (_, i) => ({
     id: `image${i + 1}`,
-    label: n >= 2 ? (i === 0 ? 'Ảnh mẫu' : `Ảnh ${i + 1}`) : 'Ảnh gốc',
+    label: n >= 2 ? (i === 0 ? t('flowNode.portRefImage') : t('flowNode.imageN', { n: i + 1 })) : t('flowNode.portSourceImage'),
   }))
 })
 // ALD 31/05/2026 - Teaser: cổng động — Sản phẩm (config.productCount 1-6) + Người mẫu
@@ -589,7 +631,7 @@ const TEASER_PRODUCT_COUNT = computed(() => {
 const TEASER_TARGETS = computed(() => {
   const out = []
   for (let i = 0; i < TEASER_PRODUCT_COUNT.value; i++)
-    out.push({ id: i === 0 ? 'product' : `product${i + 1}`, label: `Ảnh SP ${i + 1}` })
+    out.push({ id: i === 0 ? 'product' : `product${i + 1}`, label: t('flowNode.portProductN', { n: i + 1 }) })
   return out
 })
 // ALD 31/05/2026 - Compose "Ghép vào mẫu": cổng image1 = Ảnh mẫu (base latent) +
@@ -599,8 +641,8 @@ const COMPOSE_PERSON_COUNT = computed(() => {
   return Math.max(1, Math.min(2, Number.isFinite(n) && n > 0 ? n : 1))
 })
 const COMPOSE_TARGETS = computed(() => {
-  const kind = props.data.config?.subjectKind === 'product' ? 'SP' : 'Người'
-  const out = [{ id: 'image1', label: 'Ảnh mẫu' }]
+  const kind = props.data.config?.subjectKind === 'product' ? t('flowNode.subjectProduct') : t('flowNode.subjectPerson')
+  const out = [{ id: 'image1', label: t('flowNode.portRefImage') }]
   for (let i = 0; i < COMPOSE_PERSON_COUNT.value; i++)
     out.push({ id: `image${i + 2}`, label: `${kind} ${i + 1}` })
   return out
@@ -613,28 +655,28 @@ const CONCAT_CLIP_COUNT = computed(() => {
 })
 const CONCAT_TARGETS = computed(() => {
   const out = []
-  for (let i = 0; i < CONCAT_CLIP_COUNT.value; i++) out.push({ id: `clip${i + 1}`, label: `Cảnh ${i + 1}` })
+  for (let i = 0; i < CONCAT_CLIP_COUNT.value; i++) out.push({ id: `clip${i + 1}`, label: t('flowNode.sceneN', { n: i + 1 }) })
   return out
 })
 // ALD 15/06/2026 - SS cổng vào ĐỘNG 1–3 ảnh (model động) theo config.inputCount. id 'input' (1st)/'image2'/'image3'.
 const SS_TARGETS = computed(() => {
   const n = Math.max(1, Math.min(3, Number(props.data.config?.inputCount) || 1))
-  return ['input', 'image2', 'image3'].slice(0, n).map((id, i) => ({ id, label: `Ảnh ${i + 1}` }))
+  return ['input', 'image2', 'image3'].slice(0, n).map((id, i) => ({ id, label: t('flowNode.imageN', { n: i + 1 }) }))
 })
 // ALD 18/06/2026 - wan-i2v: cổng 'start' (ảnh đầu, BẮT BUỘC) + 'end' (ảnh cuối, TUỲ CHỌN) → FLF morph start→end (liền mạch).
-const WAN_I2V_TARGETS = [{ id: 'start', label: 'Ảnh đầu' }, { id: 'end', label: 'Ảnh cuối (opt)' }]
+const WAN_I2V_TARGETS = computed(() => [{ id: 'start', label: t('flowNode.portStartImage') }, { id: 'end', label: t('flowNode.portEndImageOpt') }])
 // ALD 18/06/2026 - motions-studio: API key cấu hình ở Cài đặt → Provider (theo nhóm), KHÔNG còn node/cổng API Key.
 // Unified multi-target lookup theo node type
 const multiTargets = computed(() => {
   if (props.data.type === 'fashion-motion') return FASHION_TARGETS.value
   // motion: ẩn cổng 'audio' khi dùng ÂM GỐC video (audioPassthrough mặc định true) — chỉ hiện khi chọn "Âm thay thế".
   if (props.data.type === 'motion')
-    return props.data.config?.audioPassthrough === false ? MOTION_TARGETS : MOTION_TARGETS.filter((s) => s.id !== 'audio')
+    return props.data.config?.audioPassthrough === false ? MOTION_TARGETS.value : MOTION_TARGETS.value.filter((s) => s.id !== 'audio')
   if (props.data.type === 'tryon') return TRYON_TARGETS.value
   if (props.data.type === 'create-image') return CREATE_IMAGE_TARGETS.value
   if (props.data.type === 'compose') return COMPOSE_TARGETS.value
   if (props.data.type === 'ss') return SS_TARGETS.value
-  if (props.data.type === 'wan-i2v') return WAN_I2V_TARGETS
+  if (props.data.type === 'wan-i2v') return WAN_I2V_TARGETS.value
   if (props.data.type === 'teaser') return TEASER_TARGETS.value
   if (props.data.type === 'concat') return CONCAT_TARGETS.value
   return []
@@ -843,6 +885,14 @@ watch(() => multiTargets.value.length, () => nextTick(() => _syncHandles()))
   color: #1c1c1e;
   letter-spacing: -0.022em;
   line-height: 1.18;
+}
+.apl-label-en {
+  font-size: 11px;
+  font-weight: 500;
+  font-style: italic;
+  color: rgba(60, 60, 67, 0.5);
+  line-height: 1.1;
+  margin-top: 1px;
 }
 .apl-subtitle {
   font-size: 11.5px;

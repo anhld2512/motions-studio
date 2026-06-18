@@ -3,19 +3,19 @@
   <div class="space-y-4">
     <ProviderBadge capability="image" />
     <div>
-      <label class="ins-label">Mô tả ghép (prompt)</label>
+      <label class="ins-label">{{ t('inspector.compose.prompt') }}</label>
       <textarea v-model="local.prompt" rows="4" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: ghép người vào ảnh mẫu, giữ khuôn mặt và bối cảnh tự nhiên, ánh sáng đồng nhất" />
-      <p class="ins-hint"><b>Ảnh 1 = ảnh mẫu</b> (nền), Ảnh 2… = đối tượng ghép vào.</p>
+        :placeholder="t('inspector.compose.promptPlaceholder')" />
+      <p class="ins-hint" v-html="t('inspector.compose.promptHint')"></p>
     </div>
     <div>
-      <label class="ins-label">Loại đối tượng ghép</label>
+      <label class="ins-label">{{ t('inspector.compose.subjectKind') }}</label>
       <div class="flex gap-1.5 mt-1.5">
-        <button v-for="k in [{id:'person',l:'Người'},{id:'product',l:'Sản phẩm'}]" :key="k.id" type="button" :class="['ins-chip', (local.subjectKind||'person') === k.id && 'is-active']" @click="local.subjectKind = k.id">{{ k.l }}</button>
+        <button v-for="k in subjectKinds" :key="k.id" type="button" :class="['ins-chip', (local.subjectKind||'person') === k.id && 'is-active']" @click="local.subjectKind = k.id">{{ k.l }}</button>
       </div>
     </div>
     <div>
-      <label class="ins-label">Số đối tượng (cổng)</label>
+      <label class="ins-label">{{ t('inspector.compose.personCount') }}</label>
       <div class="flex gap-1.5 mt-1.5">
         <button v-for="n in [1,2]" :key="n" type="button" :class="['ins-chip', (Number(local.personCount)||1) === n && 'is-active']" @click="local.personCount = n">{{ n }}</button>
       </div>
@@ -27,6 +27,11 @@
 <script setup>
 const props = defineProps({ config: { type: Object, default: () => ({}) }, nodeType: { type: String, default: 'compose' } })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
+const subjectKinds = computed(() => [
+  { id: 'person', l: t('inspector.compose.subjectPerson') },
+  { id: 'product', l: t('inspector.compose.subjectProduct') }
+])
 const local = ref({ prompt: '', subjectKind: 'person', personCount: 1, ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 watch(() => props.config, (v) => { if (v && JSON.stringify(v) !== JSON.stringify(local.value)) local.value = { ...local.value, ...v } })

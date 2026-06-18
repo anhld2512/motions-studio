@@ -5,7 +5,7 @@
     <ProviderBadge capability="image" />
 
     <div>
-      <label class="ins-label">Loại sản phẩm</label>
+      <label class="ins-label">{{ t('inspector.tryon.garmentType') }}</label>
       <div class="flex flex-wrap gap-1.5 mt-1.5">
         <button v-for="g in GARMENTS" :key="g.id" type="button"
           :class="['ins-chip', local.garmentType === g.id && 'is-active']" @click="local.garmentType = g.id">
@@ -15,20 +15,20 @@
     </div>
 
     <div>
-      <label class="ins-label">Số ảnh sản phẩm (cổng vào)</label>
+      <label class="ins-label">{{ t('inspector.tryon.productCount') }}</label>
       <div class="flex gap-1.5 mt-1.5">
         <button v-for="n in [1,2]" :key="n" type="button"
           :class="['ins-chip', (Number(local.productCount)||1) === n && 'is-active']" @click="local.productCount = n">
-          {{ n }} ảnh
+          {{ t('inspector.tryon.imageCount', { n }) }}
         </button>
       </div>
-      <p class="ins-hint">2 ảnh = thêm góc mặt sau / bên hông cho khớp khi xoay người.</p>
+      <p class="ins-hint">{{ t('inspector.tryon.productCountHint') }}</p>
     </div>
 
     <div>
-      <label class="ins-label">Yêu cầu thêm (prompt — tuỳ chọn)</label>
+      <label class="ins-label">{{ t('inspector.tryon.prompt') }}</label>
       <textarea v-model="local.prompt" rows="3" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: giữ nguyên khuôn mặt và dáng người, ánh sáng studio, nền sạch" />
+        :placeholder="t('inspector.tryon.promptPlaceholder')" />
     </div>
   </div>
   <!-- #endregion -->
@@ -40,15 +40,16 @@ const props = defineProps({
   nodeType: { type: String, default: 'tryon' }
 })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 
-const GARMENTS = [
-  { id: 'auto', label: 'Tự nhận', icon: 'bi-magic' },
-  { id: 'upper', label: 'Áo', icon: 'bi-person-fill' },
-  { id: 'lower', label: 'Quần', icon: 'bi-person-walking' },
-  { id: 'dress', label: 'Váy', icon: 'bi-person-arms-up' },
-  { id: 'set', label: 'Bộ', icon: 'bi-bag' },
-  { id: 'accessory', label: 'Phụ kiện', icon: 'bi-bag-heart' }
-]
+const GARMENTS = computed(() => [
+  { id: 'auto', label: t('inspector.tryon.garmentAuto'), icon: 'bi-magic' },
+  { id: 'upper', label: t('inspector.tryon.garmentUpper'), icon: 'bi-person-fill' },
+  { id: 'lower', label: t('inspector.tryon.garmentLower'), icon: 'bi-person-walking' },
+  { id: 'dress', label: t('inspector.tryon.garmentDress'), icon: 'bi-person-arms-up' },
+  { id: 'set', label: t('inspector.tryon.garmentSet'), icon: 'bi-bag' },
+  { id: 'accessory', label: t('inspector.tryon.garmentAccessory'), icon: 'bi-bag-heart' }
+])
 
 const local = ref({ garmentType: 'auto', productCount: 1, prompt: '', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })

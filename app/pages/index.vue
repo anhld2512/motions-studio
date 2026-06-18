@@ -8,7 +8,7 @@
           MOTIONS - AI STUDIO
         </p>
         <h2 class="text-xl sm:text-2xl font-black tracking-tighter title-gradient leading-tight mt-0.5">
-          Workflow Pipeline
+          {{ t('home.title') }}
         </h2>
       </div>
 
@@ -35,13 +35,13 @@
           class="press inline-flex items-center gap-2 h-10 px-4 rounded-full bg-primary text-white text-sm font-semibold shadow-pill hover:bg-primary-dark transition-colors"
         >
           <i class="bi bi-plus-circle" />
-          Workflow mới
+          {{ t('home.newWorkflow') }}
         </NuxtLink>
         <NuxtLink
           to="/workflows"
           class="press inline-flex items-center gap-2 h-10 px-4 rounded-full glass shadow-card text-sm font-semibold text-gray-700 hover:bg-white transition-colors"
         >
-          Editor
+          {{ t('home.editor') }}
           <i class="bi bi-arrow-right" />
         </NuxtLink>
       </div>
@@ -55,14 +55,14 @@
 
       <div v-else-if="!workflows.items.value.length" class="h-full flex flex-col items-center justify-center text-center">
         <i class="bi bi-diagram-3 text-4xl text-gray-300" />
-        <p class="text-sm font-semibold text-gray-600 mt-3">Chưa có workflow</p>
-        <p class="text-xs text-gray-400 mt-1">Tạo workflow đầu tiên để bắt đầu pipeline.</p>
+        <p class="text-sm font-semibold text-gray-600 mt-3">{{ t('home.emptyTitle') }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ t('home.emptyHint') }}</p>
         <NuxtLink
           to="/workflows?new=1"
           class="mt-4 press inline-flex items-center gap-2 h-10 px-5 rounded-full bg-primary text-white text-sm font-semibold shadow-pill hover:bg-primary-dark transition-colors"
         >
           <i class="bi bi-plus-circle" />
-          Tạo workflow
+          {{ t('home.createWorkflow') }}
         </NuxtLink>
       </div>
 
@@ -99,7 +99,7 @@
           class="rounded-3xl border-2 border-dashed border-gray-200 hover:border-primary/50 min-h-[104px] flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:text-primary transition-colors press"
         >
           <i class="bi bi-plus-lg text-2xl" />
-          <span class="text-xs font-semibold">Workflow mới</span>
+          <span class="text-xs font-semibold">{{ t('home.newWorkflow') }}</span>
         </NuxtLink>
       </div>
     </section>
@@ -110,7 +110,8 @@
 <script setup>
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Tổng quan — Motions' })
+const { t } = useI18n()
+useHead({ title: t('home.pageTitle') })
 
 const workflows = useWorkflows()
 const db = useLocalDb()
@@ -124,8 +125,8 @@ onMounted(async () => {
 
 // ALD 18/06/2026 - motions-studio FE-only: chip thống kê thuần client (không gọi backend).
 const stats = computed(() => [
-  { label: 'Workflow', value: workflows.items.value.length, icon: 'bi-diagram-3-fill', bg: 'bg-blue-100 text-primary' },
-  { label: 'Lưu trữ',  value: db.isNeon() ? 'Neon' : 'Local', icon: 'bi-database', bg: 'bg-violet-100 text-violet-700' },
-  { label: 'File',     value: fileStore.enabled() ? 'Supabase' : 'Local', icon: 'bi-hdd', bg: 'bg-rose-100 text-rose-700' }
+  { label: t('home.statWorkflows'), value: workflows.items.value.length, icon: 'bi-diagram-3-fill', bg: 'bg-blue-100 text-primary' },
+  { label: t('home.statStorage'),   value: db.isNeon() ? 'Neon' : 'Local', icon: 'bi-database', bg: 'bg-violet-100 text-violet-700' },
+  { label: t('home.statFiles'),     value: fileStore.enabled() ? 'Supabase' : 'Local', icon: 'bi-hdd', bg: 'bg-rose-100 text-rose-700' }
 ])
 </script>

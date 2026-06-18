@@ -3,19 +3,19 @@
   <div class="space-y-4">
     <ProviderBadge capability="video" />
     <div>
-      <label class="ins-label">Mô tả chuyển động (prompt)</label>
+      <label class="ins-label">{{ t('inspector.ss.promptLabel') }}</label>
       <textarea v-model="local.prompt" rows="4" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: máy quay lia nhẹ quanh sản phẩm, ánh sáng điện ảnh, nền chuyển động mượt" />
-      <p class="ins-hint">Provider video sinh clip từ (các) ảnh đầu vào + mô tả này.</p>
+        :placeholder="t('inspector.ss.promptPlaceholder')" />
+      <p class="ins-hint">{{ t('inspector.ss.promptHint') }}</p>
     </div>
     <div>
-      <label class="ins-label">Số ảnh đầu vào (cổng)</label>
+      <label class="ins-label">{{ t('inspector.ss.inputCountLabel') }}</label>
       <div class="flex gap-1.5 mt-1.5">
-        <button v-for="n in [1,2,3]" :key="n" type="button" :class="['ins-chip', (Number(local.inputCount)||1) === n && 'is-active']" @click="local.inputCount = n">{{ n }} ảnh</button>
+        <button v-for="n in [1,2,3]" :key="n" type="button" :class="['ins-chip', (Number(local.inputCount)||1) === n && 'is-active']" @click="local.inputCount = n">{{ t('inspector.ss.imageCount', { n }) }}</button>
       </div>
     </div>
     <div>
-      <label class="ins-label">Tỉ lệ khung</label>
+      <label class="ins-label">{{ t('inspector.ss.aspectRatioLabel') }}</label>
       <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
     </div>
   </div>
@@ -25,7 +25,8 @@
 <script setup>
 const props = defineProps({ config: { type: Object, default: () => ({}) }, nodeType: { type: String, default: 'ss' } })
 const emit = defineEmits(['update:config'])
-const ASPECTS = [{ value: '9:16', label: 'Dọc 9:16' }, { value: '16:9', label: 'Ngang 16:9' }, { value: '1:1', label: 'Vuông 1:1' }]
+const { t } = useI18n()
+const ASPECTS = computed(() => [{ value: '9:16', label: t('inspector.ss.aspect.vertical') }, { value: '16:9', label: t('inspector.ss.aspect.horizontal') }, { value: '1:1', label: t('inspector.ss.aspect.square') }])
 const local = ref({ prompt: '', inputCount: 1, aspectRatio: '9:16', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 watch(() => props.config, (v) => { if (v && JSON.stringify(v) !== JSON.stringify(local.value)) local.value = { ...local.value, ...v } })

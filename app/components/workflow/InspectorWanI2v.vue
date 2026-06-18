@@ -3,13 +3,13 @@
   <div class="space-y-4">
     <ProviderBadge capability="video" />
     <div>
-      <label class="ins-label">Mô tả chuyển động (prompt)</label>
+      <label class="ins-label">{{ t('inspector.wanI2v.promptLabel') }}</label>
       <textarea v-model="local.prompt" rows="4" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: chuyển cảnh mượt từ ảnh đầu sang ảnh cuối, máy quay lia chậm" />
-      <p class="ins-hint">Nối <b>Ảnh đầu</b> (bắt buộc) và <b>Ảnh cuối</b> (tuỳ chọn) vào cổng bên trái.</p>
+        :placeholder="t('inspector.wanI2v.promptPlaceholder')" />
+      <p class="ins-hint" v-html="t('inspector.wanI2v.promptHint')"></p>
     </div>
     <div>
-      <label class="ins-label">Tỉ lệ khung</label>
+      <label class="ins-label">{{ t('inspector.wanI2v.aspectRatioLabel') }}</label>
       <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
     </div>
   </div>
@@ -19,7 +19,8 @@
 <script setup>
 const props = defineProps({ config: { type: Object, default: () => ({}) }, nodeType: { type: String, default: 'wan-i2v' } })
 const emit = defineEmits(['update:config'])
-const ASPECTS = [{ value: '9:16', label: 'Dọc 9:16' }, { value: '16:9', label: 'Ngang 16:9' }, { value: '1:1', label: 'Vuông 1:1' }]
+const { t } = useI18n()
+const ASPECTS = computed(() => [{ value: '9:16', label: t('inspector.wanI2v.aspect.vertical') }, { value: '16:9', label: t('inspector.wanI2v.aspect.horizontal') }, { value: '1:1', label: t('inspector.wanI2v.aspect.square') }])
 const local = ref({ prompt: '', aspectRatio: '9:16', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 watch(() => props.config, (v) => { if (v && JSON.stringify(v) !== JSON.stringify(local.value)) local.value = { ...local.value, ...v } })

@@ -3,39 +3,42 @@
        GIỮ tiếng từng cảnh. Số cổng = clipCount; nối clip1, clip2… vào các node phía trước. -->
   <div class="space-y-4">
     <div class="apl-info-card">
-      <p class="font-semibold flex items-center gap-1.5"><i class="bi bi-collection-play-fill" /> Ghép cảnh</p>
+      <p class="font-semibold flex items-center gap-1.5"><i class="bi bi-collection-play-fill" /> {{ t('inspector.concat.title') }}</p>
       <p class="text-[11px] opacity-70 mt-1">
-        Nối <b>nhiều phân cảnh</b> (clip video) thành 1 video, <b>giữ tiếng từng cảnh</b> (mỗi cảnh giọng riêng).
-        Mỗi cổng <code>Cảnh N</code> nối tới 1 node tạo video (Nói/Motion/Teaser). Clip được chuẩn hoá cùng khung hình rồi nối tuần tự.
+        <i18n-t keypath="inspector.concat.intro" tag="span">
+          <template #scenes><b>{{ t('inspector.concat.introScenes') }}</b></template>
+          <template #audio><b>{{ t('inspector.concat.introAudio') }}</b></template>
+          <template #port><code>{{ t('inspector.concat.introPort') }}</code></template>
+        </i18n-t>
       </p>
     </div>
 
     <!-- Số cảnh (số cổng vào) -->
     <div class="apl-fm-group">
-      <p class="apl-fm-heading">Số phân cảnh ghép</p>
+      <p class="apl-fm-heading">{{ t('inspector.concat.clipCountLabel') }}</p>
       <div class="grid grid-cols-5 gap-1.5">
         <button v-for="n in [2,3,4,5,6]" :key="n" type="button"
           :class="['apl-fm-tile', Number(local.clipCount) === n && 'is-active']" @click="local.clipCount = n">
           <span class="apl-fm-tile-label">{{ n }}</span>
         </button>
       </div>
-      <p class="apl-fm-hint">Số cổng vào (Cảnh 1…N). Nối mỗi cổng tới 1 clip; clip ghép theo thứ tự cổng.</p>
+      <p class="apl-fm-hint">{{ t('inspector.concat.clipCountHint') }}</p>
     </div>
 
     <!-- FPS -->
     <div class="apl-fm-group">
-      <p class="apl-fm-heading">Khung hình / giây (fps)</p>
+      <p class="apl-fm-heading">{{ t('inspector.concat.fpsLabel') }}</p>
       <input v-model.number="local.fps" type="number" min="12" max="30" class="apl-fm-input" placeholder="25" />
-      <p class="apl-fm-hint">Chuẩn hoá mọi clip về fps này khi ghép. Mặc định 25.</p>
+      <p class="apl-fm-hint">{{ t('inspector.concat.fpsHint') }}</p>
     </div>
 
     <!-- ALD 17/06/2026 - Nhạc nền (upload tuỳ chọn) → mux vào video ghép. Hợp khi KHÔNG dùng voice. -->
     <div class="apl-fm-group">
-      <p class="apl-fm-heading">Nhạc nền <span class="opacity-50 normal-case font-medium">(tuỳ chọn)</span></p>
+      <p class="apl-fm-heading">{{ t('inspector.concat.musicLabel') }} <span class="opacity-50 normal-case font-medium">{{ t('inspector.concat.optional') }}</span></p>
       <input ref="musicInput" type="file" accept="audio/*" class="hidden" @change="onMusicSelected" />
       <button v-if="!local.musicKey" type="button" class="apl-upload-btn" :disabled="musicUploading" @click="musicInput?.click()">
         <i :class="['bi', musicUploading ? 'bi-arrow-repeat animate-spin' : 'bi-music-note-beamed']" />
-        <span>{{ musicUploading ? 'Đang upload…' : 'Chọn file nhạc (MP3/WAV)' }}</span>
+        <span>{{ musicUploading ? t('inspector.concat.uploading') : t('inspector.concat.pickMusic') }}</span>
       </button>
       <div v-else class="apl-music-card">
         <i class="bi bi-file-music-fill text-primary text-lg" />
@@ -43,12 +46,12 @@
           <div class="text-xs font-semibold truncate">{{ local.musicName || 'audio' }}</div>
           <audio v-if="local.musicUrl" :src="local.musicUrl" controls class="w-full mt-1 h-8" />
         </div>
-        <button type="button" class="apl-icon-btn-mini" title="Xoá nhạc" :disabled="musicUploading" @click="clearMusic"><i class="bi bi-trash" /></button>
+        <button type="button" class="apl-icon-btn-mini" :title="t('inspector.concat.removeMusic')" :disabled="musicUploading" @click="clearMusic"><i class="bi bi-trash" /></button>
       </div>
       <div v-if="local.musicKey" class="mt-2">
-        <p class="apl-fm-heading" style="margin-bottom:4px">Âm lượng nhạc: {{ Number(local.musicVolume ?? 0.6).toFixed(2) }}</p>
+        <p class="apl-fm-heading" style="margin-bottom:4px">{{ t('inspector.concat.musicVolume', { v: Number(local.musicVolume ?? 0.6).toFixed(2) }) }}</p>
         <input v-model.number="local.musicVolume" type="range" min="0" max="1" step="0.05" class="w-full" />
-        <p class="apl-fm-hint">0.3–0.4 nếu CÓ giọng đọc (nhạc dưới) · 0.8–1.0 nếu KHÔNG giọng (nhạc làm nền chính).</p>
+        <p class="apl-fm-hint">{{ t('inspector.concat.musicVolumeHint') }}</p>
       </div>
     </div>
   </div>
@@ -60,6 +63,7 @@ const props = defineProps({
   nodeType: { type: String, default: 'concat' }
 })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 
 const local = ref({ clipCount: 2, transition: 'cut', fps: 25, musicKey: '', musicBucket: '', musicName: '', musicUrl: '', musicVolume: 0.6, ...props.config })
 
@@ -73,16 +77,16 @@ const MAX_MUSIC_BYTES = 50 * 1024 * 1024
 async function onMusicSelected(ev) {
   const file = ev.target.files?.[0]
   if (!file) return
-  if (file.size > MAX_MUSIC_BYTES) { toast.error('File nhạc > 50MB.'); ev.target.value = ''; return }
+  if (file.size > MAX_MUSIC_BYTES) { toast.error(t('inspector.concat.musicTooLarge')); ev.target.value = ''; return }
   musicUploading.value = true
   try {
     const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(file) })
     local.value.musicUrl = await fileStore.putFile(dataUrl, { contentType: file.type, prefix: 'wf-concat-music' })
     local.value.musicName = file.name
     local.value.musicKey = ''; local.value.musicBucket = ''
-    toast.success(`Đã thêm nhạc: ${file.name}`, { duration: 2000 })
+    toast.success(t('inspector.concat.musicAdded', { name: file.name }), { duration: 2000 })
   } catch (err) {
-    toast.error(`Nạp nhạc lỗi: ${err?.message || err}`)
+    toast.error(t('inspector.concat.musicLoadError', { err: err?.message || err }))
   } finally {
     musicUploading.value = false
     ev.target.value = ''

@@ -3,24 +3,24 @@
   <div class="space-y-4">
     <ProviderBadge capability="video" />
     <div>
-      <label class="ins-label">Mô tả (prompt)</label>
+      <label class="ins-label">{{ t('inspector.fashionMotion.promptLabel') }}</label>
       <textarea v-model="local.prompt" rows="4" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: người mẫu mặc sản phẩm sải bước, máy quay lia, ánh sáng thời trang" />
+        :placeholder="t('inspector.fashionMotion.promptPlaceholder')" />
     </div>
     <div>
-      <label class="ins-label">Loại đồ</label>
+      <label class="ins-label">{{ t('inspector.fashionMotion.garmentLabel') }}</label>
       <div class="flex flex-wrap gap-1.5 mt-1.5">
         <button v-for="g in GARMENTS" :key="g.id" type="button" :class="['ins-chip', local.garmentType === g.id && 'is-active']" @click="local.garmentType = g.id">{{ g.label }}</button>
       </div>
     </div>
     <div>
-      <label class="ins-label">Số ảnh sản phẩm (cổng)</label>
+      <label class="ins-label">{{ t('inspector.fashionMotion.productCountLabel') }}</label>
       <div class="flex gap-1.5 mt-1.5">
-        <button v-for="n in [1,2]" :key="n" type="button" :class="['ins-chip', (Number(local.productCount)||1) === n && 'is-active']" @click="local.productCount = n">{{ n }} ảnh</button>
+        <button v-for="n in [1,2]" :key="n" type="button" :class="['ins-chip', (Number(local.productCount)||1) === n && 'is-active']" @click="local.productCount = n">{{ t('inspector.fashionMotion.imageCount', { n }) }}</button>
       </div>
     </div>
     <div>
-      <label class="ins-label">Tỉ lệ khung</label>
+      <label class="ins-label">{{ t('inspector.fashionMotion.aspectLabel') }}</label>
       <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
     </div>
   </div>
@@ -30,8 +30,9 @@
 <script setup>
 const props = defineProps({ config: { type: Object, default: () => ({}) }, nodeType: { type: String, default: 'fashion-motion' } })
 const emit = defineEmits(['update:config'])
-const GARMENTS = [{ id: 'upper', label: 'Áo' }, { id: 'lower', label: 'Quần' }, { id: 'dress', label: 'Váy' }, { id: 'bikini', label: 'Bikini' }, { id: 'accessory', label: 'Phụ kiện' }]
-const ASPECTS = [{ value: '9:16', label: 'Dọc 9:16' }, { value: '16:9', label: 'Ngang 16:9' }, { value: '1:1', label: 'Vuông 1:1' }]
+const { t } = useI18n()
+const GARMENTS = computed(() => [{ id: 'upper', label: t('inspector.fashionMotion.garmentUpper') }, { id: 'lower', label: t('inspector.fashionMotion.garmentLower') }, { id: 'dress', label: t('inspector.fashionMotion.garmentDress') }, { id: 'bikini', label: t('inspector.fashionMotion.garmentBikini') }, { id: 'accessory', label: t('inspector.fashionMotion.garmentAccessory') }])
+const ASPECTS = computed(() => [{ value: '9:16', label: t('inspector.fashionMotion.aspectPortrait') }, { value: '16:9', label: t('inspector.fashionMotion.aspectLandscape') }, { value: '1:1', label: t('inspector.fashionMotion.aspectSquare') }])
 const local = ref({ prompt: '', garmentType: 'upper', productCount: 1, aspectRatio: '9:16', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 watch(() => props.config, (v) => { if (v && JSON.stringify(v) !== JSON.stringify(local.value)) local.value = { ...local.value, ...v } })

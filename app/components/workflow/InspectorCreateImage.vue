@@ -5,35 +5,35 @@
     <ProviderBadge capability="image" />
 
     <div>
-      <label class="ins-label">Mô tả ảnh (prompt)</label>
+      <label class="ins-label">{{ t('inspector.createImage.prompt') }}</label>
       <textarea v-model="local.prompt" rows="4" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: Ảnh sản phẩm điện ảnh, ánh sáng studio cao cấp, chi tiết cao, chân thực" />
+        :placeholder="t('inspector.createImage.promptPlaceholder')" />
       <p class="ins-hint">
-        <template v-if="inputCount === 0">Không nối ảnh → sinh ảnh thuần từ mô tả (text→image).</template>
-        <template v-else-if="inputCount === 1">Mô tả cách chỉnh <b>Ảnh gốc</b> (nối vào cổng Ảnh).</template>
-        <template v-else><b>Ảnh 1 = ảnh mẫu</b>; mô tả cách áp lên Ảnh 2…{{ inputCount }}.</template>
+        <template v-if="inputCount === 0">{{ t('inspector.createImage.promptHint') }}</template>
+        <template v-else-if="inputCount === 1">{{ t('inspector.createImage.promptHint1') }}</template>
+        <template v-else>{{ t('inspector.createImage.promptHintN', { n: inputCount }) }}</template>
       </p>
     </div>
 
     <div>
-      <label class="ins-label">Số ảnh tham chiếu (cổng vào)</label>
+      <label class="ins-label">{{ t('inspector.createImage.refCount') }}</label>
       <div class="flex flex-wrap gap-1.5 mt-1.5">
         <button v-for="n in [0,1,2,3]" :key="n" type="button"
           :class="['ins-chip', inputCount === n && 'is-active']" @click="local.inputCount = n">
-          {{ n === 0 ? 'Không (text→ảnh)' : n + ' ảnh' }}
+          {{ n === 0 ? t('inspector.createImage.refNone') : t('inspector.createImage.refN', { n }) }}
         </button>
       </div>
     </div>
 
     <div>
-      <label class="ins-label">Tỉ lệ khung</label>
+      <label class="ins-label">{{ t('inspector.createImage.aspect') }}</label>
       <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
     </div>
 
     <div>
-      <label class="ins-label">Không muốn có (negative — tuỳ chọn)</label>
+      <label class="ins-label">{{ t('inspector.createImage.negative') }}</label>
       <textarea v-model="local.negativePrompt" rows="2" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: chữ, logo, méo tay, mờ" />
+        :placeholder="t('inspector.createImage.negativePlaceholder')" />
     </div>
   </div>
   <!-- #endregion -->
@@ -45,6 +45,7 @@ const props = defineProps({
   nodeType: { type: String, default: 'create-image' }
 })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 
 const ASPECTS = [
   { value: 'auto', label: 'Tự động' }, { value: '1:1', label: 'Vuông 1:1' },

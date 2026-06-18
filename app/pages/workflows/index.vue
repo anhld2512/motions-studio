@@ -11,7 +11,8 @@
 <script setup>
 definePageMeta({ middleware: 'auth' })
 
-useHead({ title: 'Workflows — Motions' })
+const { t } = useI18n()
+useHead({ title: t('workflowsList.pageTitle') })
 
 const route = useRoute()
 const wf = useWorkflows()

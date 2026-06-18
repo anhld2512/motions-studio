@@ -3,15 +3,15 @@
   <div class="space-y-4">
     <ProviderBadge capability="transcription" />
     <div>
-      <label class="ins-label">Chế độ</label>
+      <label class="ins-label">{{ t('inspector.subtitle.modeLabel') }}</label>
       <div class="flex gap-1.5 mt-1.5">
         <button v-for="m in MODES" :key="m.id" type="button" :class="['ins-chip', (local.mode||'subtitle') === m.id && 'is-active']" @click="local.mode = m.id">{{ m.label }}</button>
       </div>
     </div>
     <div v-if="local.mode !== 'subtitle-only'">
-      <label class="ins-label">Dịch sang ngôn ngữ</label>
+      <label class="ins-label">{{ t('inspector.subtitle.targetLangLabel') }}</label>
       <UiDropdown v-model="local.targetLang" :options="LANGS" icon="bi-translate" full-width no-clear class="mt-1.5" />
-      <p class="ins-hint">Nhận dạng lời thoại từ video/audio rồi dịch qua provider nhóm Văn bản.</p>
+      <p class="ins-hint">{{ t('inspector.subtitle.targetLangHint') }}</p>
     </div>
   </div>
   <!-- #endregion -->
@@ -20,8 +20,9 @@
 <script setup>
 const props = defineProps({ config: { type: Object, default: () => ({}) }, nodeType: { type: String, default: 'subtitle' } })
 const emit = defineEmits(['update:config'])
-const MODES = [{ id: 'subtitle-only', label: 'Chỉ nhận dạng' }, { id: 'translate', label: 'Nhận dạng + dịch' }]
-const LANGS = [{ value: 'vi', label: 'Tiếng Việt' }, { value: 'en', label: 'English' }, { value: 'ja', label: '日本語' }, { value: 'ko', label: '한국어' }, { value: 'zh', label: '中文' }]
+const { t } = useI18n()
+const MODES = computed(() => [{ id: 'subtitle-only', label: t('inspector.subtitle.modeSubtitleOnly') }, { id: 'translate', label: t('inspector.subtitle.modeTranslate') }])
+const LANGS = computed(() => [{ value: 'vi', label: t('inspector.subtitle.langVi') }, { value: 'en', label: 'English' }, { value: 'ja', label: '日本語' }, { value: 'ko', label: '한국어' }, { value: 'zh', label: '中文' }])
 const local = ref({ mode: 'translate', targetLang: 'vi', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 watch(() => props.config, (v) => { if (v && JSON.stringify(v) !== JSON.stringify(local.value)) local.value = { ...local.value, ...v } })

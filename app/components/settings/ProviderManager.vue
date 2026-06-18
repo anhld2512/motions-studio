@@ -3,15 +3,15 @@
        preset điền sẵn base URL + model, API key mã hoá. Chỉ dùng icon Bootstrap (không emoji). -->
   <div class="w-full space-y-3">
     <div v-if="!vaultOk" class="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-[13px] text-amber-800">
-      <i class="bi bi-shield-exclamation me-1" /> Trình duyệt không hỗ trợ Web Crypto/IndexedDB — API key sẽ KHÔNG được mã hoá. Dùng trình duyệt hiện đại.
+      <i class="bi bi-shield-exclamation me-1" /> {{ t('provider.vaultUnsupported') }}
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 items-start">
       <!-- ── Nhóm năng lực (capability bindings) ── -->
       <section class="glass shadow-card rounded-3xl p-4">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-gray-900"><i class="bi bi-diagram-2 me-1.5 text-primary" />Gắn provider theo nhóm</h3>
-          <span class="hidden sm:inline text-[11px] text-gray-400">node tự dùng provider của nhóm</span>
+          <h3 class="text-sm font-bold text-gray-900"><i class="bi bi-diagram-2 me-1.5 text-primary" />{{ t('provider.bindByGroup') }}</h3>
+          <span class="hidden sm:inline text-[11px] text-gray-400">{{ t('provider.bindByGroupHint') }}</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-2">
           <div v-for="cap in CAPABILITIES" :key="cap.id" class="rounded-2xl bg-white/60 border border-white/70 p-2.5">
@@ -28,25 +28,23 @@
               :model-value="bindings[cap.id]?.providerId || ''"
               :options="providerOptions"
               icon="bi-plug"
-              placeholder="Chưa gắn provider"
+              :placeholder="t('provider.noProviderBound')"
               full-width
               @update:model-value="(v) => onBindProvider(cap.id, v)"
             />
-            <!-- Model: chip bấm nhanh (hiện rõ) + ô tự nhập -->
+            <!-- Model: dropdown (nhãn thân thiện) + tuỳ chọn tự nhập -->
             <div v-if="bindings[cap.id]?.providerId" class="mt-2">
-              <div v-if="modelList(cap.id).length" class="flex flex-wrap gap-1 mb-1.5">
-                <button
-                  v-for="m in modelList(cap.id)" :key="m" type="button"
-                  :class="['apl-mchip', bindings[cap.id]?.model === m && 'is-active']"
-                  :title="MODEL_NOTE[m]"
-                  @click="onBindModel(cap.id, m)"
-                >{{ MODEL_NOTE[m] || m }}</button>
-              </div>
+              <UiDropdown
+                :model-value="customModel[cap.id] ? '__custom__' : (bindings[cap.id]?.model || '')"
+                :options="modelOptions(cap.id)"
+                icon="bi-box" :placeholder="t('provider.selectModel')" full-width no-clear
+                @update:model-value="(v) => onPickModel(cap.id, v)"
+              />
               <input
+                v-if="customModel[cap.id]"
                 :value="bindings[cap.id]?.model || ''"
-                type="text"
-                placeholder="hoặc gõ model id…"
-                class="apl-input h-8 text-[12.5px] w-full font-mono"
+                type="text" :placeholder="t('provider.typeModelId')"
+                class="apl-input h-8 text-[12.5px] w-full font-mono mt-1.5"
                 @change="onBindModel(cap.id, $event.target.value)"
               />
             </div>
@@ -54,12 +52,12 @@
         </div>
       </section>
 
-      <!-- ── Danh sách provider ── -->
-      <section class="glass shadow-card rounded-3xl p-4">
+      <!-- ── Danh sách provider (sticky: nút thêm + preset luôn trong tầm mắt) ── -->
+      <section class="glass shadow-card rounded-3xl p-4 xl:sticky xl:top-2 xl:self-start">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-bold text-gray-900"><i class="bi bi-plug-fill me-1.5 text-violet-600" />Providers</h3>
           <button type="button" class="press inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary text-white text-xs font-semibold shadow-pill hover:bg-primary-dark" @click="openNew()">
-            <i class="bi bi-plus-lg" /> Tự nhập
+            <i class="bi bi-plus-lg" /> {{ t('provider.custom') }}
           </button>
         </div>
 
@@ -73,7 +71,7 @@
         </div>
 
         <div v-if="!providers.length" class="text-center text-[13px] text-gray-400 py-8 rounded-2xl border border-dashed border-gray-200">
-          Bấm 1 preset trên để thêm provider (đã điền sẵn base URL + model), rồi dán API key.
+          {{ t('provider.emptyState') }}
         </div>
 
         <div v-else class="space-y-2">
@@ -86,12 +84,12 @@
               <div class="text-[10.5px] text-gray-400 truncate flex items-center gap-1">
                 {{ kindLabel(p.kind) }} ·
                 <span :class="p.apiKeyEnc ? 'text-emerald-600' : 'text-amber-600'" class="inline-flex items-center gap-0.5">
-                  <i :class="['bi', p.apiKeyEnc ? 'bi-lock-fill' : 'bi-unlock']" />{{ p.apiKeyEnc ? 'có key' : 'chưa có key' }}
+                  <i :class="['bi', p.apiKeyEnc ? 'bi-lock-fill' : 'bi-unlock']" />{{ p.apiKeyEnc ? t('provider.hasKey') : t('provider.noKey') }}
                 </span>
               </div>
             </div>
-            <button type="button" class="press h-7 px-2.5 rounded-full glass text-[11px] font-semibold text-gray-700 hover:bg-white" @click="openEdit(p)">Sửa</button>
-            <button type="button" class="press h-7 w-7 rounded-full text-rose-500 hover:bg-rose-50 text-sm" title="Xoá" @click="onRemove(p)"><i class="bi bi-trash" /></button>
+            <button type="button" class="press h-7 px-2.5 rounded-full glass text-[11px] font-semibold text-gray-700 hover:bg-white" @click="openEdit(p)">{{ t('provider.edit') }}</button>
+            <button type="button" class="press h-7 w-7 rounded-full text-rose-500 hover:bg-rose-50 text-sm" :title="t('provider.delete')" @click="onRemove(p)"><i class="bi bi-trash" /></button>
           </div>
         </div>
       </section>
@@ -100,14 +98,14 @@
     <!-- ── Editor modal ── -->
     <div v-if="editing" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" @click.self="editing = null">
       <div class="glass shadow-island-lg rounded-3xl w-full max-w-md p-5 space-y-3">
-        <h4 class="text-base font-bold text-gray-900">{{ form.id ? 'Sửa provider' : 'Thêm provider' }}</h4>
+        <h4 class="text-base font-bold text-gray-900">{{ form.id ? t('provider.editProvider') : t('provider.addProvider') }}</h4>
         <div>
-          <span class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Loại</span>
+          <span class="text-[11px] font-bold uppercase tracking-wide text-gray-500">{{ t('provider.type') }}</span>
           <UiDropdown :model-value="form.kind" :options="kindOptions" icon="bi-grid" full-width no-clear class="mt-1" @update:model-value="onKindChange" />
         </div>
         <label class="block">
-          <span class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Tên</span>
-          <input v-model="form.name" type="text" placeholder="vd OpenAI prod" class="apl-input w-full mt-1" />
+          <span class="text-[11px] font-bold uppercase tracking-wide text-gray-500">{{ t('provider.name') }}</span>
+          <input v-model="form.name" type="text" :placeholder="t('provider.namePlaceholder')" class="apl-input w-full mt-1" />
         </label>
         <label class="block">
           <span class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Base URL</span>
@@ -115,17 +113,17 @@
         </label>
         <label class="block">
           <span class="text-[11px] font-bold uppercase tracking-wide text-gray-500">
-            API key <span class="text-emerald-600 inline-flex items-center gap-0.5"><i class="bi bi-lock-fill" />mã hoá khi lưu</span>
+            API key <span class="text-emerald-600 inline-flex items-center gap-0.5"><i class="bi bi-lock-fill" />{{ t('provider.encryptedOnSave') }}</span>
           </span>
           <input v-model="form.apiKey" type="password"
-            :placeholder="form.id && hasExistingKey ? '•••• (giữ key cũ — để trống nếu không đổi)' : 'dán API key'"
+            :placeholder="form.id && hasExistingKey ? t('provider.keyKeepPlaceholder') : t('provider.keyPastePlaceholder')"
             class="apl-input w-full mt-1 font-mono text-[13px]" autocomplete="off" />
         </label>
-        <p v-if="presetModelsHint" class="text-[11px] text-gray-400"><i class="bi bi-info-circle me-1" />Model gợi ý: <code class="font-mono">{{ presetModelsHint }}</code></p>
+        <p v-if="presetModelsHint" class="text-[11px] text-gray-400"><i class="bi bi-info-circle me-1" />{{ t('provider.suggestedModels') }}: <code class="font-mono">{{ presetModelsHint }}</code></p>
         <div class="flex justify-end gap-2 pt-1">
-          <button type="button" class="press h-9 px-4 rounded-full glass text-sm font-semibold text-gray-600" @click="editing = null">Huỷ</button>
+          <button type="button" class="press h-9 px-4 rounded-full glass text-sm font-semibold text-gray-600" @click="editing = null">{{ t('provider.cancel') }}</button>
           <button type="button" class="press h-9 px-5 rounded-full bg-primary text-white text-sm font-semibold shadow-pill hover:bg-primary-dark" :disabled="saving" @click="onSave">
-            {{ saving ? 'Đang lưu…' : 'Lưu' }}
+            {{ saving ? t('provider.saving') : t('provider.save') }}
           </button>
         </div>
       </div>
@@ -135,6 +133,7 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const prov = useProviders()
 const { providers, bindings, CAPABILITIES, PROVIDER_KINDS } = prov
 prov.load()
@@ -153,13 +152,27 @@ const MODEL_NOTE = {
   'gemini-3-pro-image-preview': 'Nano Banana Pro',
   'fal-ai/nano-banana': 'Nano Banana (fal)'
 }
+const customModel = reactive({})   // capId → đang ở chế độ tự nhập model
+function modelOptions(capId) {
+  const cur = bindings.value?.[capId]?.model
+  const list = modelList(capId)
+  const opts = list.map((m) => ({ value: m, label: MODEL_NOTE[m] || m }))
+  if (cur && !list.includes(cur)) opts.unshift({ value: cur, label: `${MODEL_NOTE[cur] || cur} ${t('provider.customSuffix')}` })
+  opts.push({ value: '__custom__', label: t('provider.customModelOption') })
+  return opts
+}
+function onPickModel(capId, v) {
+  if (v === '__custom__') { customModel[capId] = true; return }
+  customModel[capId] = false
+  onBindModel(capId, v)
+}
 const kindLabel = (k) => PROVIDER_KINDS.find((x) => x.id === k)?.label || k
 
 const PRESET_KINDS = PROVIDER_KINDS.filter((k) => k.id !== 'custom')
 const kindOptions = PROVIDER_KINDS.map((k) => ({ value: k.id, label: k.label }))
 
 // Dropdown options
-const providerOptions = computed(() => [{ value: '', label: '— chưa gắn —' }, ...providers.value.map((p) => ({ value: p.id, label: p.name }))])
+const providerOptions = computed(() => [{ value: '', label: t('provider.unbound') }, ...providers.value.map((p) => ({ value: p.id, label: p.name }))])
 function modelList(capId) {
   const pid = bindings.value[capId]?.providerId
   const p = providers.value.find((x) => x.id === pid)
@@ -202,7 +215,7 @@ async function onSave() {
   }
 }
 function onRemove(p) {
-  if (confirm(`Xoá provider "${p.name}"?`)) prov.removeProvider(p.id)
+  if (confirm(t('provider.confirmDelete', { name: p.name }))) prov.removeProvider(p.id)
 }
 // Gắn provider cho nhóm → tự điền model mặc định (model đầu trong preset của provider cho nhóm đó).
 function onBindProvider(cap, providerId) {

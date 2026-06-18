@@ -1,15 +1,90 @@
-// #region ALD 18/06/2026 - Lưu FILE (ảnh/video/audio do node sinh ra + upload).
-// TÔN CHỈ (theo yêu cầu user): NẾU có cấu hình kết nối Supabase → upload file lên Supabase Storage,
-// KHÔNG có → giữ nguyên data: URL (nhúng thẳng, tức là nằm trong localStorage cùng workflow/run).
-// Gọi Storage REST trực tiếp (không cần thêm @supabase/supabase-js): POST {url}/storage/v1/object/{bucket}/{path}.
-// Key Supabase được MÃ HOÁ qua [[useSecureVault]] giống API key provider.
+// #region ALD 18/06/2026 - Lưu FILE (ảnh/video/audio do node sinh ra + upload). FE-only, KHÔNG backend riêng.
+// TÔN CHỈ (theo yêu cầu user):
+//   • CÓ cấu hình Supabase  → upload lên Supabase Storage, trả public URL (bền, share được).
+//   • KHÔNG có Supabase     → lưu blob vào IndexedDB (không phình localStorage như data: URL), trả ref "idb://<id>".
+// Vì sao IndexedDB: localStorage ~5-10MB → 1 ảnh/video base64 là tràn quota → run kẹt "running". IDB chứa hàng trăm MB.
+// Hiển thị: dùng mediaSrc(url) — idb:// → tạo object URL (cache reactive), http/data → giữ nguyên.
+// Key Supabase MÃ HOÁ qua [[useSecureVault]].
 
 const CFG_KEY = 'ms.filestore.v1'   // { url, bucket, keyEnc }
+const IDB_NAME = 'ms-media'
+const IDB_STORE = 'files'
+const IDB_META = 'meta'
+let _idbP = null
+const _loading = new Set()   // id đang nạp object URL (tránh nạp trùng)
+
+function _openIdb() {
+  if (_idbP) return _idbP
+  _idbP = new Promise((resolve, reject) => {
+    const r = indexedDB.open(IDB_NAME, 1)
+    r.onupgradeneeded = () => {
+      const db = r.result
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE)
+      if (!db.objectStoreNames.contains(IDB_META)) db.createObjectStore(IDB_META)
+    }
+    r.onsuccess = () => resolve(r.result)
+    r.onerror = () => reject(r.error)
+  })
+  return _idbP
+}
+async function _idbPut(id, blob, meta) {
+  const db = await _openIdb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([IDB_STORE, IDB_META], 'readwrite')
+    tx.objectStore(IDB_STORE).put(blob, id)
+    tx.objectStore(IDB_META).put(meta, id)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+}
+async function _idbGet(id) {
+  const db = await _openIdb()
+  return new Promise((resolve, reject) => {
+    const rq = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(id)
+    rq.onsuccess = () => resolve(rq.result || null)
+    rq.onerror = () => reject(rq.error)
+  })
+}
+async function _idbDel(id) {
+  const db = await _openIdb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([IDB_STORE, IDB_META], 'readwrite')
+    tx.objectStore(IDB_STORE).delete(id)
+    tx.objectStore(IDB_META).delete(id)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+}
+async function _idbListMeta() {
+  const db = await _openIdb()
+  return new Promise((resolve, reject) => {
+    const store = db.transaction(IDB_META, 'readonly').objectStore(IDB_META)
+    const out = []
+    const rq = store.openCursor()
+    rq.onsuccess = () => {
+      const cur = rq.result
+      if (cur) { out.push({ id: cur.key, ...(cur.value || {}) }); cur.continue() }
+      else resolve(out)
+    }
+    rq.onerror = () => reject(rq.error)
+  })
+}
+async function _idbClear() {
+  const db = await _openIdb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([IDB_STORE, IDB_META], 'readwrite')
+    tx.objectStore(IDB_STORE).clear()
+    tx.objectStore(IDB_META).clear()
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+}
 
 export function useFileStore() {
   const vault = useSecureVault()
   const cfg = useState('ms-filestore', () => ({ url: '', bucket: 'media', keyEnc: '' }))
   const loaded = useState('ms-filestore-loaded', () => false)
+  const objCache = useState('ms-media-objurls', () => ({}))   // idb id → object URL (reactive)
 
   function load() {
     if (loaded.value || !import.meta.client) return
@@ -20,7 +95,6 @@ export function useFileStore() {
 
   const enabled = () => { load(); return !!(cfg.value.url && cfg.value.bucket && cfg.value.keyEnc) }
 
-  // Lưu config (key plaintext → mã hoá). plainKey undefined = giữ key cũ.
   async function saveConfig({ url, bucket, plainKey }) {
     load()
     const next = { ...cfg.value, url: (url ?? cfg.value.url).replace(/\/$/, ''), bucket: bucket ?? cfg.value.bucket }
@@ -36,27 +110,65 @@ export function useFileStore() {
   async function _toBlob(u) { const r = await fetch(u); return await r.blob() }
   function _rand() { return Math.random().toString(36).slice(2, 10) }
 
-  // Đưa 1 media (data: URL hoặc URL) về 1 URL bền vững.
-  //   • Có Supabase  → upload → trả public URL.
-  //   • Không        → nếu là data: URL thì giữ nguyên (đã ở localStorage); nếu URL ngoài cũng giữ nguyên.
+  // Đưa 1 media (data: URL / blob: / URL ngoài) về 1 ref bền vững:
+  //   • Có Supabase → upload → public URL.
+  //   • data:/blob: + KHÔNG Supabase → IndexedDB → "idb://<id>".
+  //   • URL http(s) ngoài → giữ nguyên (đã nhẹ, không cần lưu).
   async function putFile(srcUrl, opts = {}) {
-    if (!srcUrl) return srcUrl
+    if (!srcUrl || typeof srcUrl !== 'string') return srcUrl
     load()
-    if (!enabled()) return srcUrl   // localStorage mode: data: URL nhúng thẳng
-    const blob = await _toBlob(srcUrl)
-    const mime = opts.contentType || blob.type || 'application/octet-stream'
-    const path = `${opts.prefix || 'out'}/${_rand()}-${Date.now ? '' : ''}${_rand()}.${_ext(mime)}`
-    const key = await vault.decrypt(cfg.value.keyEnc)
-    const res = await fetch(`${cfg.value.url}/storage/v1/object/${cfg.value.bucket}/${path}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, apikey: key, 'Content-Type': mime, 'x-upsert': 'true' },
-      body: blob
-    })
-    if (!res.ok) throw new Error(`Supabase upload ${res.status}: ${(await res.text()).slice(0, 200)}`)
-    return `${cfg.value.url}/storage/v1/object/public/${cfg.value.bucket}/${path}`
+    const isLocalBlob = srcUrl.startsWith('data:') || srcUrl.startsWith('blob:')
+    if (enabled() && isLocalBlob) {
+      const blob = await _toBlob(srcUrl)
+      const mime = opts.contentType || blob.type || 'application/octet-stream'
+      const path = `${opts.prefix || 'out'}/${_rand()}${_rand()}.${_ext(mime)}`
+      const key = await vault.decrypt(cfg.value.keyEnc)
+      const res = await fetch(`${cfg.value.url}/storage/v1/object/${cfg.value.bucket}/${path}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, apikey: key, 'Content-Type': mime, 'x-upsert': 'true' },
+        body: blob
+      })
+      if (!res.ok) throw new Error(`Supabase upload ${res.status}: ${(await res.text()).slice(0, 200)}`)
+      return `${cfg.value.url}/storage/v1/object/public/${cfg.value.bucket}/${path}`
+    }
+    if (isLocalBlob) {
+      // FE-only: blob → IndexedDB, trả ref nhẹ.
+      try {
+        const blob = await _toBlob(srcUrl)
+        const mime = opts.contentType || blob.type || 'application/octet-stream'
+        const id = `${opts.prefix || 'out'}-${Date.now()}-${_rand()}`
+        await _idbPut(id, blob, { mime, prefix: opts.prefix || 'out', size: blob.size, at: new Date().toISOString() })
+        return `idb://${id}`
+      } catch { return srcUrl }   // fallback hiếm: giữ nguyên (vẫn hiển thị được)
+    }
+    return srcUrl   // URL ngoài → giữ nguyên
   }
 
-  // Test: thử upload 1 file nhỏ rồi xoá.
+  // Resolver REACTIVE cho template: idb:// → object URL (nạp async, cache); còn lại trả nguyên.
+  function mediaSrc(url) {
+    if (!url || typeof url !== 'string') return url || ''
+    if (!url.startsWith('idb://')) return url
+    const id = url.slice(6)
+    const cached = objCache.value[id]
+    if (cached) return cached
+    if (import.meta.client && !_loading.has(id)) {
+      _loading.add(id)
+      _idbGet(id).then((blob) => {
+        if (blob) objCache.value = { ...objCache.value, [id]: URL.createObjectURL(blob) }
+      }).finally(() => _loading.delete(id))
+    }
+    return ''   // lần đầu trả rỗng; khi nạp xong objCache đổi → template re-render.
+  }
+
+  // Quản lý file cục bộ (cho trang/section "Lưu trữ").
+  async function listLocalFiles() { return import.meta.client ? await _idbListMeta() : [] }
+  async function removeLocalFile(id) { if (import.meta.client) await _idbDel(id) }
+  async function clearLocalFiles() { if (import.meta.client) { await _idbClear(); objCache.value = {} } }
+  async function localUsage() {
+    const rows = await listLocalFiles()
+    return { count: rows.length, bytes: rows.reduce((s, r) => s + (r.size || 0), 0) }
+  }
+
   async function testConnection() {
     load()
     const key = await vault.decrypt(cfg.value.keyEnc)
@@ -69,6 +181,7 @@ export function useFileStore() {
     return true
   }
 
-  return { cfg, load, enabled, saveConfig, clearConfig, putFile, testConnection, mask: vault.mask }
+  return { cfg, load, enabled, saveConfig, clearConfig, putFile, mediaSrc, testConnection, mask: vault.mask,
+           listLocalFiles, removeLocalFile, clearLocalFiles, localUsage }
 }
 // #endregion

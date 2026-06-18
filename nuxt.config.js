@@ -12,7 +12,19 @@ export default defineNuxtConfig({
     port: 2031
   },
 
-  modules: ['@nuxt/image', '@pinia/nuxt', '@vueuse/nuxt'],
+  modules: ['@nuxt/image', '@pinia/nuxt', '@vueuse/nuxt', '@nuxtjs/i18n'],
+
+  // ALD 18/06/2026 - i18n: chỉ quản lý locale + cookie + detect (no URL prefix). Chuỗi dịch dùng helper t('vi','en') trong [[useLang]].
+  i18n: {
+    strategy: 'no_prefix',
+    defaultLocale: 'vi',
+    langDir: 'locales',
+    locales: [
+      { code: 'vi', language: 'vi-VN', name: 'Tiếng Việt', files: ['vi.json'] },
+      { code: 'en', language: 'en-US', name: 'English', files: ['en.json'] }
+    ],
+    detectBrowserLanguage: { useCookie: true, cookieKey: 'ms_lang', alwaysRedirect: false, fallbackLocale: 'vi' }
+  },
 
   css: ['~/assets/css/main.css'],
 

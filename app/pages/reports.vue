@@ -1,95 +1,100 @@
 <template>
   <!-- #region ALD 18/06/2026 - Báo cáo tổng: thống kê workflow / run / kết quả / cấu hình (FE-only, từ store). -->
-  <div class="flex-1 min-h-0 overflow-hidden flex flex-col px-3 sm:px-6 py-3 gap-3">
-    <header class="glass shadow-island rounded-3xl px-4 sm:px-6 py-3 flex-shrink-0 flex items-center gap-3 flex-wrap">
+  <div class="flex-1 min-h-0 overflow-hidden flex flex-col px-3 sm:px-5 py-3 gap-2.5">
+    <header class="flex-shrink-0 flex items-center gap-3 flex-wrap px-1">
       <div class="min-w-0 flex-1">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-primary leading-none">BÁO CÁO</p>
-        <h2 class="text-xl sm:text-2xl font-black tracking-tighter title-gradient leading-tight mt-0.5">Tổng quan hoạt động</h2>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-primary leading-none">{{ t('reports.eyebrow') }}</p>
+        <h2 class="text-lg sm:text-xl font-black tracking-tighter title-gradient leading-tight mt-0.5">{{ t('reports.title') }}</h2>
       </div>
       <button type="button" class="press h-9 px-4 rounded-full glass text-sm font-semibold text-gray-700 hover:bg-white" @click="refresh">
-        <i class="bi bi-arrow-clockwise me-1" />Làm mới
+        <i class="bi bi-arrow-clockwise me-1" />{{ t('reports.refresh') }}
       </button>
     </header>
 
-    <section class="flex-1 min-h-0 overflow-y-auto pr-1 pb-4 space-y-3">
-      <!-- KPI -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div v-for="k in kpis" :key="k.label" class="glass shadow-card rounded-3xl p-4 flex items-center gap-3">
-          <span :class="['inline-flex h-11 w-11 items-center justify-center rounded-2xl flex-shrink-0', k.bg]"><i :class="['bi text-lg', k.icon]" /></span>
-          <div class="min-w-0">
-            <div class="text-2xl font-black tracking-tighter text-gray-900 leading-none">{{ k.value }}</div>
-            <div class="text-[11px] font-bold uppercase tracking-wide text-gray-500 mt-1 truncate">{{ k.label }}</div>
-          </div>
+    <!-- KPI -->
+    <div class="grid grid-cols-4 gap-2.5 flex-shrink-0">
+      <div v-for="k in kpis" :key="k.label" class="glass shadow-card rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
+        <span :class="['inline-flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0', k.bg]"><i :class="['bi', k.icon]" /></span>
+        <div class="min-w-0">
+          <div class="text-xl font-black tracking-tighter text-gray-900 leading-none">{{ k.value }}</div>
+          <div class="text-[10px] font-bold uppercase tracking-wide text-gray-500 mt-0.5 truncate">{{ k.label }}</div>
         </div>
       </div>
+    </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-        <!-- Tỷ lệ trạng thái -->
-        <section class="glass shadow-card rounded-3xl p-4">
-          <h3 class="text-sm font-bold text-gray-900 mb-3"><i class="bi bi-pie-chart me-1.5 text-primary" />Trạng thái run</h3>
-          <div v-if="!totalRuns" class="text-[13px] text-gray-400 py-4 text-center">Chưa có run nào.</div>
-          <div v-else class="space-y-2.5">
-            <div v-for="s in statusRows" :key="s.key">
-              <div class="flex items-center justify-between text-[12px] mb-1">
-                <span class="font-semibold text-gray-700 inline-flex items-center gap-1.5"><i :class="['bi', s.icon, s.text]" />{{ s.label }}</span>
-                <span class="text-gray-500">{{ s.count }} · {{ s.pct }}%</span>
-              </div>
-              <div class="h-2 rounded-full bg-gray-100 overflow-hidden"><div :class="['h-full rounded-full', s.bar]" :style="{ width: s.pct + '%' }" /></div>
+    <!-- Lưới biểu đồ — lấp đầy phần còn lại, KHÔNG cuộn -->
+    <div class="flex-1 min-h-0 grid grid-cols-12 grid-rows-2 gap-2.5">
+      <!-- Donut trạng thái -->
+      <section class="glass shadow-card rounded-2xl p-3.5 col-span-4 row-span-1 flex flex-col">
+        <h3 class="text-[13px] font-bold text-gray-900 mb-1"><i class="bi bi-pie-chart-fill me-1.5 text-primary" />{{ t('reports.statusTitle') }}</h3>
+        <div v-if="!totalRuns" class="flex-1 flex items-center justify-center text-[12px] text-gray-400">{{ t('reports.noRuns') }}</div>
+        <div v-else class="flex-1 flex items-center gap-3 min-h-0">
+          <svg viewBox="0 0 42 42" class="h-[104px] w-[104px] flex-shrink-0 -rotate-90">
+            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#eef0f3" stroke-width="5" />
+            <circle v-for="seg in donut" :key="seg.key" cx="21" cy="21" r="15.9155" fill="none"
+              :stroke="seg.color" stroke-width="5" :stroke-dasharray="`${seg.pct} ${100 - seg.pct}`" :stroke-dashoffset="seg.offset" />
+            <text x="21" y="20.5" transform="rotate(90 21 21)" text-anchor="middle" class="fill-gray-900" style="font-size:7px;font-weight:800">{{ successRate }}%</text>
+            <text x="21" y="26" transform="rotate(90 21 21)" text-anchor="middle" class="fill-gray-400" style="font-size:3px;font-weight:600">SUCCESS</text>
+          </svg>
+          <div class="flex-1 min-w-0 space-y-1.5">
+            <div v-for="s in statusRows" :key="s.key" class="flex items-center gap-1.5 text-[12px]">
+              <span class="h-2.5 w-2.5 rounded-full flex-shrink-0" :style="{ background: s.color }" />
+              <span class="font-semibold text-gray-700 truncate">{{ s.label }}</span>
+              <span class="ml-auto text-gray-500 flex-shrink-0">{{ s.count }} · {{ s.pct }}%</span>
             </div>
-            <div class="pt-1 text-[12px] text-gray-500">Tỷ lệ thành công: <b class="text-emerald-600">{{ successRate }}%</b></div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- Top workflow theo số run -->
-        <section class="glass shadow-card rounded-3xl p-4">
-          <h3 class="text-sm font-bold text-gray-900 mb-3"><i class="bi bi-trophy me-1.5 text-amber-500" />Workflow chạy nhiều nhất</h3>
-          <div v-if="!topWorkflows.length" class="text-[13px] text-gray-400 py-4 text-center">Chưa có dữ liệu.</div>
-          <div v-else class="space-y-2">
-            <div v-for="w in topWorkflows" :key="w.id" class="flex items-center gap-2.5">
-              <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-primary flex-shrink-0"><i class="bi bi-diagram-3-fill text-sm" /></span>
-              <div class="min-w-0 flex-1">
-                <div class="text-[13px] font-bold text-gray-900 truncate">{{ w.name }}</div>
-                <div class="h-1.5 rounded-full bg-gray-100 overflow-hidden mt-1"><div class="h-full rounded-full bg-primary" :style="{ width: w.pct + '%' }" /></div>
-              </div>
-              <div class="text-[11px] text-gray-500 text-right flex-shrink-0">{{ w.total }} run<br><span class="text-emerald-600">{{ w.ok }} ok</span></div>
-            </div>
+      <!-- 7 ngày -->
+      <section class="glass shadow-card rounded-2xl p-3.5 col-span-8 row-span-1 flex flex-col">
+        <h3 class="text-[13px] font-bold text-gray-900 mb-1"><i class="bi bi-bar-chart-fill me-1.5 text-violet-600" />{{ t('reports.activity7d') }} <span class="text-gray-400 font-normal float-right">{{ t('reports.runCount', { n: days.reduce((a, b) => a + b.count, 0) }) }}</span></h3>
+        <div class="flex-1 flex items-end gap-2.5 min-h-0 pt-2">
+          <div v-for="d in days" :key="d.key" class="flex-1 flex flex-col items-center justify-end gap-1 min-w-0 h-full">
+            <span class="text-[10px] font-bold text-gray-500" :class="{ 'opacity-0': !d.count }">{{ d.count }}</span>
+            <div class="w-full rounded-t-md bg-gradient-to-t from-primary to-violet-400" :style="{ height: pctH(d.count) }" :title="`${d.count} run`" />
+            <span class="text-[9.5px] text-gray-400">{{ d.label }}</span>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- Hoạt động 7 ngày -->
-        <section class="glass shadow-card rounded-3xl p-4">
-          <h3 class="text-sm font-bold text-gray-900 mb-3"><i class="bi bi-calendar3 me-1.5 text-violet-600" />7 ngày gần đây</h3>
-          <div class="flex items-end gap-2 h-28">
-            <div v-for="d in days" :key="d.key" class="flex-1 flex flex-col items-center justify-end gap-1 min-w-0">
-              <div class="w-full rounded-t-lg bg-primary/80" :style="{ height: (maxDay ? (d.count / maxDay * 88) : 0) + 'px', minHeight: d.count ? '4px' : '0' }" :title="`${d.count} run`" />
-              <span class="text-[9.5px] text-gray-400">{{ d.label }}</span>
+      <!-- Top workflow -->
+      <section class="glass shadow-card rounded-2xl p-3.5 col-span-5 row-span-1 flex flex-col min-h-0">
+        <h3 class="text-[13px] font-bold text-gray-900 mb-1.5"><i class="bi bi-trophy-fill me-1.5 text-amber-500" />{{ t('reports.topWorkflows') }}</h3>
+        <div v-if="!topWorkflows.length" class="flex-1 flex items-center justify-center text-[12px] text-gray-400">{{ t('reports.noData') }}</div>
+        <div v-else class="flex-1 min-h-0 overflow-auto space-y-1.5 pr-1">
+          <div v-for="w in topWorkflows" :key="w.id" class="flex items-center gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="text-[12px] font-bold text-gray-800 truncate">{{ w.name }}</div>
+              <div class="h-1.5 rounded-full bg-gray-100 overflow-hidden mt-1"><div class="h-full rounded-full bg-primary" :style="{ width: w.pct + '%' }" /></div>
             </div>
+            <div class="text-[10.5px] text-gray-500 text-right flex-shrink-0 leading-tight">{{ t('reports.runCount', { n: w.total }) }}<br><span class="text-emerald-600">{{ t('reports.okCount', { n: w.ok }) }}</span></div>
           </div>
-          <div class="text-[11px] text-gray-500 mt-2">Tổng 7 ngày: <b>{{ days.reduce((a, b) => a + b.count, 0) }}</b> run</div>
-        </section>
+        </div>
+      </section>
 
-        <!-- Kết quả + cấu hình -->
-        <section class="glass shadow-card rounded-3xl p-4 space-y-3">
-          <div>
-            <h3 class="text-sm font-bold text-gray-900 mb-2"><i class="bi bi-collection me-1.5 text-rose-500" />Kết quả đã tạo</h3>
-            <div class="flex gap-2">
-              <div v-for="o in outputs" :key="o.label" class="flex-1 rounded-2xl bg-white/60 border border-white/70 p-2.5 text-center">
-                <div class="text-lg font-black text-gray-900">{{ o.value }}</div>
-                <div class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide"><i :class="['bi me-0.5', o.icon]" />{{ o.label }}</div>
-              </div>
-            </div>
+      <!-- Kết quả -->
+      <section class="glass shadow-card rounded-2xl p-3.5 col-span-3 row-span-1 flex flex-col">
+        <h3 class="text-[13px] font-bold text-gray-900 mb-1.5"><i class="bi bi-collection-fill me-1.5 text-rose-500" />{{ t('reports.outputsTitle') }}</h3>
+        <div class="flex-1 grid grid-rows-3 gap-1.5">
+          <div v-for="o in outputs" :key="o.label" class="rounded-xl bg-white/60 border border-white/70 px-3 flex items-center gap-2">
+            <i :class="['bi text-lg', o.icon, o.text]" />
+            <span class="text-[12px] font-semibold text-gray-600">{{ o.label }}</span>
+            <span class="ml-auto text-lg font-black text-gray-900">{{ o.value }}</span>
           </div>
-          <div>
-            <h3 class="text-sm font-bold text-gray-900 mb-2"><i class="bi bi-gear me-1.5 text-gray-500" />Cấu hình</h3>
-            <div class="space-y-1.5 text-[12.5px]">
-              <div class="flex items-center justify-between"><span class="text-gray-600"><i class="bi bi-database me-1.5" />Lưu workflow</span><span class="font-semibold" :class="cfg.db === 'Neon' ? 'text-emerald-600' : 'text-gray-700'">{{ cfg.db }}</span></div>
-              <div class="flex items-center justify-between"><span class="text-gray-600"><i class="bi bi-images me-1.5" />Lưu file</span><span class="font-semibold" :class="cfg.file === 'Supabase' ? 'text-emerald-600' : 'text-gray-700'">{{ cfg.file }}</span></div>
-              <div class="flex items-center justify-between"><span class="text-gray-600"><i class="bi bi-plug me-1.5" />Provider đã gắn</span><span class="font-semibold text-gray-700">{{ cfg.providers }} · {{ cfg.bound }}/5 nhóm</span></div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </section>
+        </div>
+      </section>
+
+      <!-- Cấu hình -->
+      <section class="glass shadow-card rounded-2xl p-3.5 col-span-4 row-span-1 flex flex-col">
+        <h3 class="text-[13px] font-bold text-gray-900 mb-1.5"><i class="bi bi-gear-fill me-1.5 text-gray-500" />{{ t('reports.configTitle') }}</h3>
+        <div class="flex-1 flex flex-col justify-center space-y-2 text-[12.5px]">
+          <div class="flex items-center justify-between"><span class="text-gray-600"><i class="bi bi-database me-1.5" />{{ t('reports.cfgWorkflowStore') }}</span><span class="font-semibold px-2 py-0.5 rounded-full" :class="cfg.db === 'Neon' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-600'">{{ cfg.db }}</span></div>
+          <div class="flex items-center justify-between"><span class="text-gray-600"><i class="bi bi-images me-1.5" />{{ t('reports.cfgFileStore') }}</span><span class="font-semibold px-2 py-0.5 rounded-full" :class="cfg.file === 'Supabase' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-600'">{{ cfg.file }}</span></div>
+          <div class="flex items-center justify-between"><span class="text-gray-600"><i class="bi bi-plug me-1.5" />{{ t('reports.cfgProvider') }}</span><span class="font-semibold text-gray-700">{{ t('reports.cfgProviderValue', { providers: cfg.providers, bound: cfg.bound }) }}</span></div>
+        </div>
+      </section>
+    </div>
   </div>
   <!-- #endregion -->
 </template>
@@ -97,6 +102,7 @@
 <script setup>
 definePageMeta({ middleware: ['auth'] })
 useHead({ title: 'Báo cáo — Motions Studio' })
+const { t } = useI18n()
 
 const db = useLocalDb()
 const prov = useProviders()
@@ -119,23 +125,33 @@ const countBy = (s) => runs.value.filter((r) => r.status === s).length
 const successRate = computed(() => totalRuns.value ? Math.round(countBy('success') / totalRuns.value * 100) : 0)
 
 const kpis = computed(() => [
-  { label: 'Workflow', value: workflows.value.length, icon: 'bi-diagram-3-fill', bg: 'bg-blue-100 text-primary' },
-  { label: 'Tổng run', value: totalRuns.value, icon: 'bi-play-circle-fill', bg: 'bg-violet-100 text-violet-700' },
-  { label: 'Thành công', value: countBy('success'), icon: 'bi-check2-circle', bg: 'bg-emerald-100 text-emerald-700' },
-  { label: 'Lỗi', value: countBy('error'), icon: 'bi-x-circle', bg: 'bg-rose-100 text-rose-700' }
+  { label: t('reports.kpiWorkflows'), value: workflows.value.length, icon: 'bi-diagram-3-fill', bg: 'bg-blue-100 text-primary' },
+  { label: t('reports.kpiTotalRuns'), value: totalRuns.value, icon: 'bi-play-circle-fill', bg: 'bg-violet-100 text-violet-700' },
+  { label: t('reports.kpiSuccess'), value: countBy('success'), icon: 'bi-check2-circle', bg: 'bg-emerald-100 text-emerald-700' },
+  { label: t('reports.kpiErrors'), value: countBy('error'), icon: 'bi-x-circle', bg: 'bg-rose-100 text-rose-700' }
 ])
 
 const statusRows = computed(() => {
   const defs = [
-    { key: 'success', label: 'Xong', icon: 'bi-check2-circle', text: 'text-emerald-600', bar: 'bg-emerald-500' },
-    { key: 'running', label: 'Đang chạy', icon: 'bi-arrow-repeat', text: 'text-amber-600', bar: 'bg-amber-400' },
-    { key: 'queued', label: 'Chờ', icon: 'bi-hourglass-split', text: 'text-primary', bar: 'bg-blue-400' },
-    { key: 'error', label: 'Lỗi', icon: 'bi-x-circle', text: 'text-rose-600', bar: 'bg-rose-500' }
+    { key: 'success', label: t('reports.statusSuccess'), color: '#10b981' },
+    { key: 'running', label: t('reports.statusRunning'), color: '#f59e0b' },
+    { key: 'queued', label: t('reports.statusQueued'), color: '#3b82f6' },
+    { key: 'error', label: t('reports.statusError'), color: '#f43f5e' }
   ]
   return defs.map((d) => {
     const count = countBy(d.key)
     return { ...d, count, pct: totalRuns.value ? Math.round(count / totalRuns.value * 100) : 0 }
   }).filter((d) => d.count > 0)
+})
+
+// Donut: mỗi segment = vòng tròn r=15.9155 (chu vi ≈ 100) với dasharray theo % + offset cộng dồn.
+const donut = computed(() => {
+  let acc = 0
+  return statusRows.value.map((s) => {
+    const seg = { key: s.key, color: s.color, pct: s.pct, offset: (100 - acc) % 100 || 0 }
+    acc += s.pct
+    return seg
+  })
 })
 
 const topWorkflows = computed(() => {
@@ -148,7 +164,7 @@ const topWorkflows = computed(() => {
   const nameOf = Object.fromEntries(workflows.value.map((w) => [w.id, w.name || w.slug]))
   const arr = Object.values(m).sort((a, b) => b.total - a.total).slice(0, 5)
   const max = arr[0]?.total || 1
-  return arr.map((x) => ({ ...x, name: nameOf[x.id] || '— đã xoá —', pct: Math.round(x.total / max * 100) }))
+  return arr.map((x) => ({ ...x, name: nameOf[x.id] || t('reports.deletedWorkflow'), pct: Math.round(x.total / max * 100) }))
 })
 
 const days = computed(() => {
@@ -163,6 +179,7 @@ const days = computed(() => {
   return out
 })
 const maxDay = computed(() => Math.max(1, ...days.value.map((d) => d.count)))
+const pctH = (n) => `${maxDay.value ? Math.max(n ? 6 : 0, Math.round(n / maxDay.value * 100)) : 0}%`
 
 const outputs = computed(() => {
   let img = 0, vid = 0, txt = 0
@@ -173,9 +190,9 @@ const outputs = computed(() => {
     if (m.text) txt++
   }
   return [
-    { label: 'Ảnh', value: img, icon: 'bi-image' },
-    { label: 'Video', value: vid, icon: 'bi-camera-reels' },
-    { label: 'Văn bản', value: txt, icon: 'bi-card-text' }
+    { label: t('reports.outImages'), value: img, icon: 'bi-image', text: 'text-blue-500' },
+    { label: t('reports.outVideos'), value: vid, icon: 'bi-camera-reels', text: 'text-violet-500' },
+    { label: t('reports.outText'), value: txt, icon: 'bi-card-text', text: 'text-emerald-500' }
   ]
 })
 

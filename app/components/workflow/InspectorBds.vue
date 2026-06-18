@@ -3,13 +3,13 @@
   <div class="space-y-4">
     <ProviderBadge capability="video" />
     <div>
-      <label class="ins-label">Kịch bản / mô tả</label>
+      <label class="ins-label">{{ t('inspector.bds.promptLabel') }}</label>
       <textarea v-model="local.prompt" rows="5" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: từ mặt bằng trống → dựng móng → lên tầng → hoàn thiện ngôi nhà, time-lapse, flycam" />
-      <p class="ins-hint">Sinh video time-lapse từ ảnh đầu vào + mô tả công đoạn.</p>
+        :placeholder="t('inspector.bds.promptPlaceholder')" />
+      <p class="ins-hint">{{ t('inspector.bds.promptHint') }}</p>
     </div>
     <div>
-      <label class="ins-label">Tỉ lệ khung</label>
+      <label class="ins-label">{{ t('inspector.bds.aspectLabel') }}</label>
       <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
     </div>
   </div>
@@ -19,7 +19,8 @@
 <script setup>
 const props = defineProps({ config: { type: Object, default: () => ({}) }, nodeType: { type: String, default: 'bds' } })
 const emit = defineEmits(['update:config'])
-const ASPECTS = [{ value: '9:16', label: 'Dọc 9:16' }, { value: '16:9', label: 'Ngang 16:9' }, { value: '1:1', label: 'Vuông 1:1' }]
+const { t } = useI18n()
+const ASPECTS = computed(() => [{ value: '9:16', label: t('inspector.bds.aspectPortrait') }, { value: '16:9', label: t('inspector.bds.aspectLandscape') }, { value: '1:1', label: t('inspector.bds.aspectSquare') }])
 const local = ref({ prompt: '', aspectRatio: '9:16', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 watch(() => props.config, (v) => { if (v && JSON.stringify(v) !== JSON.stringify(local.value)) local.value = { ...local.value, ...v } })

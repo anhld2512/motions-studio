@@ -5,14 +5,14 @@
     <ProviderBadge capability="video" />
 
     <div>
-      <label class="ins-label">Mô tả chuyển động (prompt)</label>
+      <label class="ins-label">{{ t('inspector.motionTransfer.promptLabel') }}</label>
       <textarea v-model="local.prompt" rows="4" class="ins-input mt-1.5 w-full resize-y"
-        placeholder="VD: người mẫu xoay người nhẹ, tóc bay theo gió, máy quay lia chậm, ánh sáng điện ảnh" />
-      <p class="ins-hint">Provider video (vd Veo) sinh video từ <b>ảnh đầu vào</b> + mô tả này.</p>
+        :placeholder="t('inspector.motionTransfer.promptPlaceholder')" />
+      <p class="ins-hint" v-html="t('inspector.motionTransfer.promptHint')"></p>
     </div>
 
     <div>
-      <label class="ins-label">Tỉ lệ khung</label>
+      <label class="ins-label">{{ t('inspector.motionTransfer.aspectRatioLabel') }}</label>
       <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
     </div>
   </div>
@@ -25,11 +25,12 @@ const props = defineProps({
   nodeType: { type: String, default: 'motion' }
 })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 
-const ASPECTS = [
-  { value: '9:16', label: 'Dọc 9:16' }, { value: '16:9', label: 'Ngang 16:9' },
-  { value: '1:1', label: 'Vuông 1:1' }, { value: '4:3', label: '4:3' }
-]
+const ASPECTS = computed(() => [
+  { value: '9:16', label: t('inspector.motionTransfer.aspect.vertical') }, { value: '16:9', label: t('inspector.motionTransfer.aspect.horizontal') },
+  { value: '1:1', label: t('inspector.motionTransfer.aspect.square') }, { value: '4:3', label: '4:3' }
+])
 
 const local = ref({ prompt: '', aspectRatio: '9:16', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })

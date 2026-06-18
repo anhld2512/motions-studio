@@ -42,7 +42,7 @@
           dragging ? 'bi-cloud-arrow-down-fill ' + accentTextClass : (icon || 'bi-images') + ' text-gray-300 group-hover:scale-110'
         ]" />
         <p :class="['text-[11px] font-semibold mt-1', dragging ? accentTextClass : 'text-gray-600']">
-          {{ dragging ? 'Thả để upload' : `Click hoặc kéo 1-${maxFiles} file vào` }}
+          {{ dragging ? t('upload.dropToUpload') : t('upload.clickOrDragMulti', { max: maxFiles }) }}
         </p>
         <p v-if="!dragging && hint" class="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{{ hint }}</p>
       </div>
@@ -61,7 +61,7 @@
           <button
             type="button"
             class="absolute top-1 right-1 h-5 w-5 flex items-center justify-center rounded-full bg-black/40 hover:bg-rose-500 text-white backdrop-blur transition-colors press"
-            title="Xoá"
+            :title="t('upload.remove')"
             @click.stop.prevent="removeAt(idx)"
           >
             <i class="bi bi-x text-[10px]" />
@@ -79,7 +79,7 @@
           @click.stop.prevent="inputRef?.click()"
         >
           <i class="bi bi-plus-lg text-base" />
-          <span class="text-[9px] font-bold">Thêm</span>
+          <span class="text-[9px] font-bold">{{ t('upload.addMore') }}</span>
         </button>
       </div>
     </div>
@@ -88,6 +88,7 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const props = defineProps({
   modelValue: { type: Array, default: () => [] }, // File[]
   label:       { type: String,  default: 'Upload files' },
