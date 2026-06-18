@@ -66,17 +66,17 @@
         </NuxtLink>
       </div>
 
-      <!-- auto-fit: thẻ tự co để TẤT CẢ workflow vừa 1 màn hình -->
+      <!-- Lưới thẻ workflow — thẻ CO theo nội dung (không kéo giãn full chiều cao), tự xuống dòng. -->
       <div
         v-else
-        class="h-full grid gap-3 content-start overflow-hidden"
-        style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); grid-auto-rows: minmax(0, 1fr);"
+        class="grid gap-3 content-start auto-rows-min overflow-y-auto pb-2"
+        style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"
       >
         <NuxtLink
           v-for="wf in workflows.items.value"
           :key="wf.id"
           :to="`/workflows/${wf.id}`"
-          class="group glass shadow-card rounded-3xl p-4 flex flex-col gap-2 min-h-0 hover:bg-white hover:shadow-island transition-spring press overflow-hidden"
+          class="group glass shadow-card rounded-3xl p-4 min-h-[104px] flex flex-col gap-2 hover:bg-white hover:shadow-island transition-spring press"
         >
           <div class="flex items-center gap-3">
             <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-primary flex-shrink-0">
@@ -96,7 +96,7 @@
         <!-- Thẻ tạo mới luôn ở cuối -->
         <NuxtLink
           to="/workflows?new=1"
-          class="rounded-3xl border-2 border-dashed border-gray-200 hover:border-primary/50 flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:text-primary transition-colors press min-h-0"
+          class="rounded-3xl border-2 border-dashed border-gray-200 hover:border-primary/50 min-h-[104px] flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:text-primary transition-colors press"
         >
           <i class="bi bi-plus-lg text-2xl" />
           <span class="text-xs font-semibold">Workflow mới</span>

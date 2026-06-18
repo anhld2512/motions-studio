@@ -24,14 +24,6 @@
       <p class="apl-card-hint">{{ activeFormat.desc }}</p>
     </div>
 
-    <!-- ALD 15/06/2026 - Xả RAM/VRAM khi workflow ra kết quả (Chandra stop + Ollama unload + ComfyUI free). -->
-    <label class="apl-toggle">
-      <span class="min-w-0">
-        <span class="apl-toggle-title">Xả RAM/VRAM khi xong</span>
-        <span class="apl-card-hint">Ra kết quả → tự dọn VRAM/RAM (Chandra + Ollama + ComfyUI). Máy nhẹ sau mỗi lần chạy; lần sau ComfyUI nạp lại model (cold-start chậm hơn chút).</span>
-      </span>
-      <input v-model="local.cleanup" type="checkbox" class="apl-toggle-input" >
-    </label>
   </div>
 </template>
 

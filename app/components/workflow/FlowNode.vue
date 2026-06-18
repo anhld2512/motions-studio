@@ -220,7 +220,7 @@ const NODE_META = {
   teaser:    { icon: 'bi-camera-reels-fill',     accent: '#FF2D55', accentSoft: '#FCE5EB', accentText: '#A11D38', label: 'Teaser' },
   'text-to-video': { icon: 'bi-camera-reels',    accent: '#FF2D55', accentSoft: '#FCE5EB', accentText: '#A11D38', label: 'Text → Video' },
   ss:        { icon: 'bi-film',                  accent: '#5856D6', accentSoft: '#ECECFB', accentText: '#3E3CA8', label: 'SS' },
-  'wan-i2v': { icon: 'bi-camera-reels',          accent: '#FF2D55', accentSoft: '#FCE5EB', accentText: '#A11D38', label: 'Ảnh → Video (Wan)' },
+  'wan-i2v': { icon: 'bi-camera-reels',          accent: '#FF2D55', accentSoft: '#FCE5EB', accentText: '#A11D38', label: 'Ảnh → Video' },
   talk:      { icon: 'bi-mic-fill',              accent: '#34C759', accentSoft: '#E3F9E9', accentText: '#1B7A38', label: 'Nói (lip-sync)' },
   voiceover: { icon: 'bi-soundwave',             accent: '#34C759', accentSoft: '#E3F9E9', accentText: '#1B7A38', label: 'Lồng tiếng' },
   concat:    { icon: 'bi-collection-play-fill',  accent: '#5856D6', accentSoft: '#E8E8FB', accentText: '#3A38A6', label: 'Ghép cảnh' },
@@ -233,7 +233,7 @@ const NODE_META = {
   condition: { icon: 'bi-shuffle',               accent: '#FF9500', accentSoft: '#FFEFD9', accentText: '#A86200', label: 'Condition' },
   output:    { icon: 'bi-box-arrow-right',       accent: '#8E8E93', accentSoft: '#EFEFF4', accentText: '#3C3C43', label: 'Output' },
   // ALD 11/06/2026 - Node khai báo API key (HuggingFace/Gemini/Veo/custom): nối cổng ra → cổng "API Key" của
-  // node đích (ưu tiên nhất), hoặc đặt rời = tự phân bổ theo Type. Chỉ self-host không cần key.
+  // node đích (ưu tiên nhất)
 }
 
 const meta = computed(() => {
@@ -285,7 +285,7 @@ const subtitle = computed(() => {
       return parts.join(' · ')
     }
     case 'tryon': {
-      // ALD 11/06/2026 - KHÔNG hiện engine (Qwen-Edit/Gemini). Chỉ loại đồ.
+      // ALD 11/06/2026 - KHÔNG hiện engine (provider). Chỉ loại đồ.
       const garmentLabel = { upper: 'Áo', lower: 'Quần', dress: 'Váy', set: 'Set', bikini: 'Bikini', accessory: 'Phụ kiện' }[c.garmentType]
       return garmentLabel || 'Thử đồ'
     }
@@ -330,7 +330,7 @@ const subtitle = computed(() => {
     case 'talk': {
       const v = (c.voice || '').includes('Puck') || (c.voice || '').includes('Charon') ? 'giọng nam'
         : (c.voice || '').includes('Aoede') || (c.voice || '').includes('Kore') ? 'giọng nữ'
-        : (c.voice || '').startsWith('vixtts') ? 'clone' : (c.voice || 'mặc định')
+        : (c.voice || 'mặc định')
       const l = (c.line || '').trim()
       return `${v}${l ? ' · ' + (l.length > 22 ? l.slice(0, 22) + '…' : l) : ''}`
     }
@@ -401,50 +401,8 @@ const garmentIconClass = computed(() => ({
 }[props.data.config?.garmentType] || ''))
 const subtitleTitle = computed(() => subtitle.value || 'Chưa cấu hình')
 
-// ALD 24/05/2026 - Library signed URL resolver (audio /audio, image-video-file /storage).
-// Cache theo libraryId trên local ref để không spam fetch khi Vue Flow re-render.
-// ALD 27/05/2026 - Ưu tiên workflow-scoped endpoint /workflows/:wfId/asset/:libId nếu đang
-// trong context workflow editor (route.params.id) → public viewer truy cập được asset owner
-// reference trong def. Fallback direct /audio-files /storage-files cho trường hợp ngoài
-// editor (vd shared component nếu có).
+// ALD 18/06/2026 - motions-studio FE-only: bỏ library backend. Input dùng staticUrl/data URL/URL trực tiếp.
 const libraryResolvedUrl = ref('')
-const libraryResolvingId = ref('')
-const route = useRoute()
-const wf = useWorkflows()
-async function resolveLibraryUrl(libId, ct) {
-  if (!libId) { libraryResolvedUrl.value = ''; return }
-  if (libraryResolvingId.value === libId && libraryResolvedUrl.value) return
-  libraryResolvingId.value = libId
-  const wfId = route?.params?.id
-  const kind = ct === 'audio' ? 'audio' : 'storage'
-  try {
-    if (wfId) {
-      const item = await wf.getAsset(String(wfId), libId, kind)
-      if (item?.signedUrl) {
-        if (libraryResolvingId.value === libId) libraryResolvedUrl.value = item.signedUrl
-        return
-      }
-      // Fallthrough — endpoint mới trả null (e.g., libId không reference trong def) thì
-      // thử direct (owner trường hợp picker chưa save vào def).
-    }
-    if (ct === 'audio') {
-      const audio = useAudioFiles()
-      const url = await audio.getSignedUrl(libId)
-      if (libraryResolvingId.value === libId) libraryResolvedUrl.value = url || ''
-    } else {
-      const storage = useStorageFiles()
-      const data = await storage.getSignedUrl(libId).catch(() => null)
-      const url = data?.signedUrl || data?.signed_url || ''
-      if (libraryResolvingId.value === libId) libraryResolvedUrl.value = url
-    }
-  } catch {
-    libraryResolvedUrl.value = ''
-  }
-}
-watch(() => [props.data.config?.libraryId, props.data.config?.contentType, props.data.config?.source], ([id, ct, src]) => {
-  if (src === 'library' && id) resolveLibraryUrl(id, ct)
-  else libraryResolvedUrl.value = ''
-}, { immediate: true })
 
 // Preview src cho node:
 // · Input: staticData (base64) → wrap data:URL; OR url field (skip nếu template `{{...}}`)
@@ -575,7 +533,7 @@ const isEntryNode = computed(() => {
 // ALD 24/05/2026 - fashion-motion node có 4 target handles (slot riêng theo purpose).
 // Edge.targetHandle = id giúp engine map đúng input → slot.
 // #region ALD 10/06/2026 - Tryon/Fashion-Motion: cổng SP động (config.productCount 1-2). Ảnh góc 2 (mặt sau/
-// bên hông) → Qwen-Edit image3 → render đúng sản phẩm khi người mẫu quay lưng/xoay người. Qwen tối đa 3 slot
+// bên hông) → provider image3 → render đúng sản phẩm khi người mẫu quay lưng/xoay người. provider tối đa 3 slot
 // ảnh (model chiếm 1) nên cap 2 ảnh SP. Handle id khớp worker: product + product2.
 const PRODUCT_PORT_COUNT = computed(() => {
   const n = Number(props.data.config?.productCount)
@@ -635,7 +593,7 @@ const TEASER_TARGETS = computed(() => {
   return out
 })
 // ALD 31/05/2026 - Compose "Ghép vào mẫu": cổng image1 = Ảnh mẫu (base latent) +
-// image2..N = Người (config.personCount 1-2). Qwen-Edit tối đa 3 ảnh = mẫu + 2 người.
+// image2..N = Người (config.personCount 1-2). provider tối đa 3 ảnh = mẫu + 2 người.
 const COMPOSE_PERSON_COUNT = computed(() => {
   const n = Number(props.data.config?.personCount)
   return Math.max(1, Math.min(2, Number.isFinite(n) && n > 0 ? n : 1))
@@ -740,7 +698,7 @@ watch(() => multiTargets.value.length, () => nextTick(() => _syncHandles()))
   position: relative;
   width: 100%;
   /* ALD 27/05/2026 - Adaptive aspect ratio: box auto-fit theo natural ratio của content
-     (image/video). User feedback: 16:9 cứng làm portrait Wan output 9:16 bị letterbox
+     (image/video). User feedback: 16:9 cứng làm portrait video 9:16 bị letterbox
      2 bên đen — xấu. Bỏ aspect-ratio cứng, để <img>/<video> sizing tự nhiên fill width
      và đặt box height theo content. Cap max-height để không vỡ layout node. */
   max-height: 360px;
