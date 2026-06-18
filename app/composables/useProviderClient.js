@@ -60,6 +60,16 @@ export function useProviderClient() {
     const kind = provider?.kind || 'openai'
     const refs = (opts.images || []).filter(Boolean)
 
+    // fal.ai (Kling/Runway/Luma/Flux/Nano-Banana…) — POST {baseUrl}/{model}, auth "Key <key>".
+    if (kind === 'fal' || /fal\.run/.test(baseUrl)) {
+      const body = { prompt }
+      if (refs[0]) body.image_url = refs[0]
+      const data = await _postJson(`${baseUrl}/${model || 'fal-ai/flux/dev'}`, { Authorization: `Key ${apiKey}`, ...headers }, body)
+      const url = data?.images?.[0]?.url || data?.image?.url
+      if (!url) throw new Error('fal không trả ảnh')
+      return { url }
+    }
+
     if (kind === 'gemini') {
       // Gemini image (Imagen / 2.5-flash-image). Trả inlineData base64.
       const parts = [{ text: prompt }, ...refs.map((u) => _geminiInline(u)).filter(Boolean)]
@@ -109,6 +119,17 @@ export function useProviderClient() {
     const { baseUrl, apiKey, model, headers, provider } = rsv
     const kind = provider?.kind || 'openai'
     const onProgress = opts.onProgress || (() => {})
+
+    // fal.ai — Kling / Runway / Luma / Minimax / Veo qua 1 API. POST {baseUrl}/{model}, auth "Key <key>".
+    if (kind === 'fal' || /fal\.run/.test(baseUrl)) {
+      onProgress('Đang tạo video qua fal.ai… (có thể vài phút)')
+      const body = { prompt }
+      if (opts.image) body.image_url = opts.image
+      const data = await _postJson(`${baseUrl}/${model || 'fal-ai/kling-video/v2/master/image-to-video'}`, { Authorization: `Key ${apiKey}`, ...headers }, body)
+      const url = data?.video?.url || data?.videos?.[0]?.url
+      if (!url) throw new Error('fal không trả video')
+      return { url }
+    }
 
     if (kind === 'gemini') {
       const veo = model || 'veo-3.0-generate-001'

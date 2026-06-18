@@ -804,7 +804,7 @@
           </div>
           <div class="apl-modal-body">
             <p class="apl-modal-hint mb-3">
-              <b>1 ảnh nhà hoàn thiện</b> → tỏa ra số công đoạn bạn chọn, mỗi công đoạn 1 chuỗi <b>Qwen Edit → Ảnh→Video<template v-if="bdsGen.voiceover"> → Lồng tiếng</template></b>,
+              <b>1 ảnh nhà hoàn thiện</b> → tỏa ra số công đoạn bạn chọn, mỗi công đoạn 1 chuỗi <b>tạo ảnh → Ảnh→Video<template v-if="bdsGen.voiceover"> → Lồng tiếng</template></b>,
               gộp vào <b>Ghép cảnh</b> → <b>Kết quả</b>. Chỉ tải <b>1 ảnh</b> lúc chạy. Sửa prompt/giọng từng node sau khi dựng.
             </p>
 
@@ -869,7 +869,7 @@
             <div class="space-y-2.5 mt-2">
               <div v-for="(st, i) in bdsGen.stages" :key="i" class="rounded-xl border border-gray-200 bg-gray-50/60 p-2.5">
                 <p class="text-[11px] font-bold text-emerald-700 mb-1.5">Công đoạn {{ i + 1 }}</p>
-                <textarea v-model="st.image" rows="2" class="apl-modal-input text-[12px]" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" placeholder="Ảnh: trạng thái xây dựng (Qwen Edit)…" />
+                <textarea v-model="st.image" rows="2" class="apl-modal-input text-[12px]" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" placeholder="Ảnh: trạng thái xây dựng (tạo ảnh)…" />
                 <textarea v-model="st.motion" rows="1" class="apl-modal-input text-[12px] mt-1.5" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" placeholder="Chuyển động: cảnh quay / công nhân (Ảnh→Video)…" />
                 <textarea v-if="bdsGen.voiceover" v-model="st.narration" rows="1" class="apl-modal-input text-[12px] mt-1.5" style="height:auto;padding:6px 8px;resize:vertical;font-family:inherit" placeholder="Lời thuyết minh (có dấu)…" />
               </div>
@@ -1431,36 +1431,35 @@ const CATEGORIES = [
   {
     id: 'image', label: 'Ảnh',
     nodes: [
-      { id: 'create-image', label: 'Create Image', hint: 'Qwen-Edit / Gemini · prompt + 1–3 ảnh tham chiếu → ảnh mới (ETA ~30s)', icon: 'bi-images', color: '#AF52DE', soft: '#F4E9FB' },
-      { id: 'tryon',        label: 'Try-on',       hint: 'Qwen-Edit / Gemini · model + product → ảnh đã thay đồ (ETA ~30s)', icon: 'bi-person-vcard', color: '#FF9500', soft: '#FFF1DE' },
-      // ẩn: cùng backend create-image (preset "ghép người vào mẫu"). Giữ handler cho workflow cũ.
-      { id: 'compose', label: 'Ghép vào mẫu', hidden: true, hint: 'Ghép người thật vào ảnh mẫu (bối cảnh/pose đẹp) · Qwen-Edit · ảnh mẫu + 1–2 người, giữ mặt', icon: 'bi-person-bounding-box', color: '#5856D6', soft: '#ECECFB' }
+      { id: 'create-image', label: 'Create Image', hint: 'Mô tả → ảnh AI. Có thể nối 1–3 ảnh tham chiếu. (provider nhóm Tạo/sửa ảnh)', icon: 'bi-images', color: '#AF52DE', soft: '#F4E9FB' },
+      { id: 'tryon',        label: 'Thử đồ',       hint: 'Người mẫu + sản phẩm → ảnh đã thay đồ. (provider nhóm Tạo/sửa ảnh)', icon: 'bi-person-vcard', color: '#FF9500', soft: '#FFF1DE' },
+      { id: 'compose', label: 'Ghép vào mẫu', hint: 'Ghép người thật vào ảnh mẫu, giữ khuôn mặt. (provider nhóm Tạo/sửa ảnh)', icon: 'bi-person-bounding-box', color: '#5856D6', soft: '#ECECFB' }
     ]
   },
   {
     id: 'video', label: 'Video từ ảnh / prompt',
     nodes: [
-      { id: 'motion',         label: 'Motion Transfer', hint: 'Wan 2.2 Animate · ref image + motion video',                       icon: 'bi-film',         color: '#FF2D55', soft: '#FCE5EB' },
-      { id: 'fashion-motion', label: 'Fashion Motion',  hint: 'Qwen-Edit + Wan Animate gộp 1 bước · model + product + motion',    icon: 'bi-magic',        color: '#AF52DE', soft: '#F4E9FB' },
-      { id: 'ss',             label: 'SS',              hint: 'Ảnh → Video (LTX-2.3 + LoRA bạn tự train). Cổng vào động 1–3 ảnh (đặt trong Inspector).', icon: 'bi-film', color: '#5856D6', soft: '#ECECFB' },
-      { id: 'wan-i2v',        label: 'Ảnh → Video (Wan)', hint: 'Nối 1 ẢNH + prompt (TIẾNG ANH) → video chuyển động bằng Wan 2.1/2.2 I2V. Dùng cho time-lapse BĐS (engine đã cài sẵn trên box).', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
-      { id: 'text-to-video',  label: 'Text → Video',    hint: 'Prompt → video ngắn (Wan2.2 T2V / LTX). Không cần ảnh.', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
-      { id: 'bds',            label: 'Time Lapse Construction', hint: '1 ảnh nhà hoàn thiện → video time-lapse XÂY NHÀ (đất→móng→khung→hoàn thiện) + flycam. Công nhân xây tay, không máy móc. Local/free, render lâu ~15-25 phút.', icon: 'bi-buildings', color: '#FF9500', soft: '#FFF1DD' }
+      { id: 'motion',         label: 'Motion Control',  hint: 'Ảnh + mô tả chuyển động → video. (provider nhóm Tạo video)', icon: 'bi-film',         color: '#FF2D55', soft: '#FCE5EB' },
+      { id: 'fashion-motion', label: 'Fashion Motion',  hint: 'Người mẫu + sản phẩm → video thời trang. (provider nhóm Tạo video)', icon: 'bi-magic',        color: '#AF52DE', soft: '#F4E9FB' },
+      { id: 'ss',             label: 'Ảnh → Video',     hint: 'Ảnh → video. Cổng vào 1–3 ảnh (chỉnh trong Inspector). (provider nhóm Tạo video)', icon: 'bi-film', color: '#5856D6', soft: '#ECECFB' },
+      { id: 'wan-i2v',        label: 'Ảnh đầu → cuối',  hint: 'Nối Ảnh đầu (+ Ảnh cuối tuỳ chọn) + mô tả → video. (provider nhóm Tạo video)', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
+      { id: 'text-to-video',  label: 'Text → Video',    hint: 'Mô tả → video ngắn, không cần ảnh. (provider nhóm Tạo video)', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
+      { id: 'bds',            label: 'Time-lapse xây dựng', hint: '1 ảnh → video time-lapse xây nhà (đất→móng→khung→hoàn thiện) + flycam. (provider nhóm Tạo video)', icon: 'bi-buildings', color: '#FF9500', soft: '#FFF1DD' }
     ]
   },
   {
     id: 'talk', label: 'Người nói (lip-sync)',
     nodes: [
-      { id: 'talk',        label: 'Nói (lip-sync)',  hint: 'MultiTalk · ảnh nhân vật + câu thoại (giọng nam/nữ/clone) → video NÓI nhép miệng đúng khẩu hình.', icon: 'bi-mic-fill', color: '#34C759', soft: '#E3F9E9' },
-      { id: 'voiceover',   label: 'Lồng tiếng (đọc mô tả)', hint: 'Nối 1 CLIP video (từ SS/Ảnh→Video) + lời thuyết minh + giọng → giọng đọc tiếng Việt ghép lên clip, giữ nguyên hình & độ dài. KHÔNG cần khuôn mặt.', icon: 'bi-soundwave', color: '#34C759', soft: '#E3F9E9' }
+      { id: 'talk',        label: 'Nói (lip-sync)',  hint: 'Ảnh nhân vật + câu thoại → video nói nhép miệng. (provider nhóm Giọng nói)', icon: 'bi-mic-fill', color: '#34C759', soft: '#E3F9E9' },
+      { id: 'voiceover',   label: 'Lồng tiếng',      hint: 'Clip video + lời thuyết minh → giọng đọc ghép lên clip, giữ hình & độ dài. (provider nhóm Giọng nói)', icon: 'bi-soundwave', color: '#34C759', soft: '#E3F9E9' }
     ]
   },
   {
     id: 'film', label: 'Dựng phim / ghép',
     nodes: [
-      { id: 'teaser',     label: 'Teaser',        hint: 'Sản phẩm + storyboard → video quảng cáo ĐIỆN ẢNH (AI tự dựng bối cảnh từng shot + voiceover + nhạc). KHÔNG cần người mẫu.', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
+      { id: 'teaser',     label: 'Teaser',        hint: 'Sản phẩm + kịch bản → video quảng cáo điện ảnh. (provider nhóm Tạo video)', icon: 'bi-camera-reels', color: '#FF2D55', soft: '#FCE5EB' },
       { id: 'concat',     label: 'Ghép cảnh',     hint: 'Ghép ≥2 phân cảnh (clip video) thành 1 video, GIỮ tiếng từng cảnh. Nối cổng clip1, clip2… từ các node talk/motion.', icon: 'bi-collection-play-fill', color: '#5856D6', soft: '#E8E8FB' },
-      { id: 'subtitle',   label: 'Phụ đề + Dịch', hint: '1 video → nhận lời thoại (Whisper) + dịch. Chế độ: cháy PHỤ ĐỀ (giữ tiếng gốc) / LỒNG TIẾNG Việt (thay giọng) / cả hai. Dịch từng câu realtime. Nối 1 node Input (Video).', icon: 'bi-badge-cc', color: '#FF9500', soft: '#FFF1DD' }
+      { id: 'subtitle',   label: 'Phụ đề + Dịch', hint: '1 video → nhận lời thoại + dịch phụ đề. (provider nhóm Nhận dạng/phụ đề)', icon: 'bi-badge-cc', color: '#FF9500', soft: '#FFF1DD' }
     ]
   },
   {
@@ -1682,12 +1681,12 @@ function onDrop(ev) {
 // chuỗi node, nối sẵn. Engine duyệt tuyến tính (1 node 1 cổng ra) nên KHÔNG fan-out 1 ảnh ra N node: mỗi công đoạn có
 // 1 input-root RIÊNG (cùng field=image → 1 lần upload dùng chung) → create-image(edit) → ss(i2v) → [voiceover] → concat.
 const BDS_VOICES = [
-  { id: 'vixtts', label: 'Clone', icon: 'bi-soundwave' },
-  { id: 'gemini:Aoede', label: 'Nữ', icon: 'bi-gender-female' },
-  { id: 'gemini:Puck', label: 'Nam', icon: 'bi-gender-male' },
+  { id: 'alloy', label: 'alloy', icon: 'bi-soundwave' },
+  { id: 'nova', label: 'nova', icon: 'bi-gender-female' },
+  { id: 'Puck', label: 'Puck', icon: 'bi-gender-male' },
 ]
 // 6 công đoạn chuẩn (đầu = mặt bằng trống, cuối = hoàn thiện); chọn N mốc rải đều giữa 2 đầu.
-// ALD 17/06/2026 - image+motion prompt PHẢI tiếng ANH (Qwen-Edit & Wan không hiểu tiếng Việt → render sai/đứng hình).
+// ALD 17/06/2026 - image+motion prompt PHẢI tiếng ANH (provider).
 // narration GIỮ tiếng Việt (đó là giọng đọc TTS). image = lệnh BIẾN ĐỔI mạnh + giữ nguyên góc máy/bối cảnh.
 // ALD 17/06/2026 - GÓC QUAY: công đoạn đang-xây (mọi entry TRỪ cuối) = camera ĐỨNG YÊN, góc rộng CHÍNH DIỆN (cùng
 // góc ảnh gốc) → 3 clip liền mạch/khớp nhau; CHỈ entry CUỐI (hoàn thiện) mới FLYCAM. image tả máy móc/công nhân đang xây.
@@ -1739,7 +1738,7 @@ function bdsPickStages(n) {
   })
 }
 const bdsGenOpen = ref(false)
-const bdsGen = reactive({ sceneCount: 4, voiceover: true, voice: 'vixtts', nightScene: false, stages: bdsPickStages(4) })
+const bdsGen = reactive({ sceneCount: 4, voiceover: true, voice: 'alloy', nightScene: false, stages: bdsPickStages(4) })
 // Đổi số công đoạn → dựng lại danh sách prompt mặc định (chưa lưu lên canvas nên reset thoải mái).
 watch(() => bdsGen.sceneCount, (n) => { bdsGen.stages = bdsPickStages(n) })
 
@@ -1784,7 +1783,7 @@ async function buildBdsPipeline() {
     let tail = ssId
     if (bdsGen.voiceover) {
       const voId = nid('vo', i)
-      newNodes.push({ id: voId, type: 'step', position: { x: X0 + COL * 3, y }, data: { type: 'voiceover', config: { ...defaultConfig('voiceover'), voice: bdsGen.voice || 'vixtts', script: st.narration || '', _gen: 'bds', _stage: i } } })
+      newNodes.push({ id: voId, type: 'step', position: { x: X0 + COL * 3, y }, data: { type: 'voiceover', config: { ...defaultConfig('voiceover'), voice: bdsGen.voice || 'alloy', script: st.narration || '', _gen: 'bds', _stage: i } } })
       newEdges.push({ id: eid(), source: ssId, target: voId, sourceHandle: undefined, targetHandle: undefined, data: {} })
       tail = voId
     }
@@ -1806,23 +1805,20 @@ async function buildBdsPipeline() {
 function defaultConfig(type) {
   switch (type) {
     case 'input':     return { contentType: 'text', source: 'session', field: 'text' }
-    case 'output':    return { format: 'markdown', cleanup: false }
-    // ALD 11/06/2026 - provider HuggingFace ĐÃ GỠ theo yêu cầu user (backend còn nhánh ngủ đông).
-    case 'motion':    return { preset: '15s-720p', mode: 'transfer', refImageSource: 'prev', motionVideoSource: 'prev', cfg: 6.0, shift: 8.0, scheduler: 'unipc', audioPassthrough: true, fps60: false }
-    case 'fashion-motion': return { preset: '15s-720p', garmentType: 'upper', modelImageSource: 'prev', productImageSource: 'prev', motionVideoSource: 'prev', loraRelight: 0.7, saveIntermediate: false }
-    case 'tryon':     return { provider: 'qwen', garmentType: 'upper', autoAnalyze: true, brightness: 0, outputRes: '' }
-    case 'create-image': return { provider: 'qwen', model: 'qwen-edit', geminiModel: 'nano-banana-pro', prompt: '', promptMode: 'text', promptJson: '', negativePrompt: '', apiKey: '', inputCount: 0, useModelStandard: false, modelStandardPreset: 'female', modelStandardPrompt: '', refineSteps: 0, realismPreset: 'real_photo', outputCount: 1, aspectRatio: 'auto', quality: 'standard' }
-    case 'compose':   return { provider: 'qwen', personCount: 1, keepFace: true, subjectKind: 'person', sceneNote: '', prompt: '', autoPrompt: true }
-    // ALD 11/06/2026 - node khai báo key: providerType (gemini|veo|custom) + apiKey (mask server-side).
-    // ALD 14/06/2026 - text-to-video: CHỈ prompt (không ảnh) → video ngắn. model dropdown (wan2.1 mặc định | wan2.2).
-    case 'text-to-video': return { model: 'wan2.1', duration: 5, aspectRatio: '16:9', prompt: '', negativePrompt: '' }
-    // ALD 14/06/2026 - ss: Ảnh→Video LTX-2.3 + LoRA custom. loraName khớp model_files.filename (type loras).
-    case 'ss': return { prompt: '', negativePrompt: '', promptMode: 'text', promptJson: '', duration: 5, aspectRatio: '9:16', linkMode: 'anchor', loraName: '', loraStrength: 1.0, inputCount: 1 }
-    case 'wan-i2v': return { prompt: '', negativePrompt: '', duration: 5, aspectRatio: '9:16', wanModel: 'wan2.1' }
-    case 'talk':      return { line: '', voice: 'gemini:Aoede', prompt: '', fps: 25 }
-    case 'voiceover': return { script: '', voice: 'vixtts', mix: 'replace' }
+    case 'output':    return { format: 'image' }
+    // ALD 18/06/2026 - default config provider-based (engine/model do provider quyết định ở Cài đặt → Provider).
+    case 'motion':    return { prompt: '', aspectRatio: '9:16' }
+    case 'fashion-motion': return { prompt: '', garmentType: 'upper', productCount: 1, aspectRatio: '9:16' }
+    case 'tryon':     return { garmentType: 'auto', productCount: 1, prompt: '' }
+    case 'create-image': return { prompt: '', negativePrompt: '', inputCount: 0, aspectRatio: 'auto' }
+    case 'compose':   return { prompt: '', subjectKind: 'person', personCount: 1 }
+    case 'text-to-video': return { prompt: '', aspectRatio: '16:9' }
+    case 'ss':        return { prompt: '', inputCount: 1, aspectRatio: '9:16' }
+    case 'wan-i2v':   return { prompt: '', aspectRatio: '9:16' }
+    case 'talk':      return { line: '', voice: 'alloy' }
+    case 'voiceover': return { script: '', voice: 'alloy', mix: 'replace' }
     case 'concat':    return { clipCount: 2, transition: 'cut', fps: 25 }
-    case 'subtitle':  return { mode: 'subtitle', targetLang: 'vi', bilingual: false, asrModel: 'medium', fontSize: 18, position: 'bottom', voice: '', voiceSpeed: 1.3 }
+    case 'subtitle':  return { mode: 'translate', targetLang: 'vi' }
     case 'workflow':  return { slug: '' }
     case 'condition': return { expression: 'text.length > 100' }
     case 'http':      return { method: 'POST', url: '', headers: {}, body: '', timeout: 30000 }
@@ -2084,8 +2080,8 @@ async function openTestRun() {
 // nhưng FE không care nữa). Người dùng có thể chạy test mới.
 // ALD 28/05/2026 - REAL cancel: gọi BE POST /workflows/runs/:id/cancel để cascade
 // cancel xuống motion_jobs + fashion_motion_jobs. Worker poll DB mỗi 2s detect →
-// interrupt ComfyUI + free VRAM. Trước đây chỉ patch FE local entry → server không
-// biết → Wan job vẫn chạy nốt 8-22 phút → user spam Cancel + Run mới → 3 Wan jobs
+// huỷ tiến trình. Trước đây chỉ patch FE local entry → server không
+// biết → job vẫn chạy nốt 8-22 phút → user spam Cancel + Run mới → 3 jobs
 // concurrent → server load 297 + sshd starve.
 async function cancelRun(entry) {
   if (!entry || (entry.status !== 'running' && entry.status !== 'queued')) return
@@ -2269,20 +2265,11 @@ async function pollRunUntilDone(entryId, runId, startTs) {
 // nên giữa các mốc đó FE tự nội suy + xoay caption để UX không bị stuck "30%" 10 phút.
 // Tổng ETA expected ~12 phút cho 30s-720p (sampler ~10 phút).
 const FM_STAGES = [
-  { p: 0.02, label: 'Khởi tạo môi trường…' },
-  { p: 0.08, label: 'Tải input lên GPU server…' },
-  { p: 0.12, label: 'Stage 1 · Phân tích vùng quần áo (mask)…' },
-  { p: 0.18, label: 'Stage 1 · Qwen-Image-Edit đang thử đồ…' },
-  { p: 0.28, label: 'Stage 1 · Refine mask + clip vào ref…' },
-  { p: 0.34, label: 'Stage 2 · Nạp Wan 2.2 Animate 14B lên VRAM…' },
-  { p: 0.40, label: 'Stage 2 · Phân tích pose từ video motion…' },
-  { p: 0.48, label: 'Stage 2 · Sampling expert HIGH (motion guidance)…' },
-  { p: 0.62, label: 'Stage 2 · Sampling expert LOW (refine details)…' },
-  { p: 0.78, label: 'Stage 2 · VAE decode 481 frames…' },
-  { p: 0.86, label: 'Composing video + audio passthrough…' },
-  { p: 0.92, label: 'Replace audio (ffmpeg merge)…' },
-  { p: 0.96, label: 'Upload output lên storage…' },
-  { p: 0.99, label: 'Sắp xong, đợi worker mark done…' }
+  { p: 0.05, label: 'Đang gửi yêu cầu tới provider…' },
+  { p: 0.25, label: 'Provider đang xử lý ảnh…' },
+  { p: 0.55, label: 'Provider đang dựng video…' },
+  { p: 0.85, label: 'Hoàn thiện kết quả…' },
+  { p: 0.99, label: 'Sắp xong…' }
 ]
 function fmStageFor(elapsed, totalMs = 12 * 60 * 1000) {
   const r = Math.min(0.99, elapsed / totalMs)
@@ -2581,7 +2568,7 @@ async function doTestRun() {
 }
 
 // Resume polling khi user reload page mà có entry còn _live=true
-// ALD 24/05/2026 - Bỏ cap 30 phút stale (quá hẹp — Wan HQ 22p + queue có thể >30p).
+// ALD 24/05/2026 - Bỏ cap 30 phút stale (quá hẹp — job render lâu).
 // reconcileStalePendingJobs đã sync trạng thái thật từ fashion_motion_jobs.status nên
 // FE không cần đoán "stale" bằng wall clock — BE là source of truth.
 function resumeLivePolls() {
@@ -3105,10 +3092,10 @@ const InspectorDebug = defineAsyncComponent(() => import('~/components/workflow/
 const InspectorTeaser = defineAsyncComponent(() => import('~/components/workflow/InspectorTeaser.vue'))
 const InspectorCompose = defineAsyncComponent(() => import('~/components/workflow/InspectorCompose.vue'))
 const InspectorTextToVideo = defineAsyncComponent(() => import('~/components/workflow/InspectorTextToVideo.vue')) // ALD 14/06/2026
-const InspectorSs = defineAsyncComponent(() => import('~/components/workflow/InspectorSs.vue')) // ALD 14/06/2026 - SS: Ảnh→Video LTX-2.3 + LoRA
+const InspectorSs = defineAsyncComponent(() => import('~/components/workflow/InspectorSs.vue'))
 const InspectorTalk = defineAsyncComponent(() => import('~/components/workflow/InspectorTalk.vue'))
 const InspectorVoiceover = defineAsyncComponent(() => import('~/components/workflow/InspectorVoiceover.vue')) // ALD 17/06/2026 - Lồng tiếng đọc mô tả lên clip
-const InspectorWanI2v = defineAsyncComponent(() => import('~/components/workflow/InspectorWanI2v.vue')) // ALD 17/06/2026 - Ảnh → Video (Wan I2V)
+const InspectorWanI2v = defineAsyncComponent(() => import('~/components/workflow/InspectorWanI2v.vue'))
 const InspectorConcat = defineAsyncComponent(() => import('~/components/workflow/InspectorConcat.vue'))
 const InspectorBds = defineAsyncComponent(() => import('~/components/workflow/InspectorBds.vue'))
 const InspectorSubtitle = defineAsyncComponent(() => import('~/components/workflow/InspectorSubtitle.vue')) // ALD 15/06/2026 - Phụ đề + Dịch
@@ -3128,11 +3115,11 @@ function inspectorComponent(type) {
     compose: InspectorCompose,
     teaser: InspectorTeaser,
     'text-to-video': InspectorTextToVideo, // ALD 14/06/2026
-    ss: InspectorSs, // ALD 14/06/2026 - SS: Ảnh→Video LTX-2.3 + LoRA custom
+    ss: InspectorSs,
     subtitle: InspectorSubtitle, // ALD 15/06/2026 - Phụ đề + Dịch
     talk: InspectorTalk,
     voiceover: InspectorVoiceover, // ALD 17/06/2026 - Lồng tiếng đọc mô tả lên clip
-    'wan-i2v': InspectorWanI2v, // ALD 17/06/2026 - Ảnh → Video (Wan I2V)
+    'wan-i2v': InspectorWanI2v,
     concat: InspectorConcat,
     bds: InspectorBds,
     debug: InspectorDebug

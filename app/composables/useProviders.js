@@ -30,16 +30,16 @@ export function capabilityOf(nodeType) {
   return NODE_CAPABILITY[nodeType] || null
 }
 
-// Preset provider: base URL + danh sách model GỢI Ý theo từng nhóm năng lực (điền sẵn cho enduser).
-// model id chính xác theo nhà cung cấp (Claude: claude-opus-4-8 / claude-sonnet-4-6 / claude-haiku-4-5).
+// Preset provider: base URL có sẵn của các nhà lớn + model GỢI Ý theo từng nhóm năng lực (điền sẵn).
+// Mọi kind KHÁC anthropic/gemini/elevenlabs đều được client xử lý như OpenAI-compatible (chat/completions, images/generations).
 export const PROVIDER_KINDS = [
   {
     id: 'openai', label: 'OpenAI (ChatGPT)', baseUrl: 'https://api.openai.com/v1', browserHeader: null,
     models: {
-      text: ['gpt-4o', 'gpt-4o-mini', 'o3-mini'],
+      text: ['gpt-4o', 'gpt-4o-mini', 'o3', 'o3-mini', 'o1'],
       image: ['gpt-image-1', 'dall-e-3'],
-      speech: ['gpt-4o-mini-tts'],
-      transcription: ['whisper-1']
+      speech: ['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd'],
+      transcription: ['whisper-1', 'gpt-4o-transcribe']
     }
   },
   {
@@ -50,16 +50,59 @@ export const PROVIDER_KINDS = [
   {
     id: 'gemini', label: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta', browserHeader: null,
     models: {
-      text: ['gemini-2.5-flash', 'gemini-2.5-pro'],
-      image: ['gemini-2.5-flash-image'],
-      video: ['veo-3.0-generate-001'],
-      speech: ['gemini-2.5-flash-preview-tts']
+      text: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'],
+      // gemini-2.5-flash-image = "Nano Banana" (tạo/sửa ảnh); imagen = sinh ảnh thuần.
+      image: ['gemini-2.5-flash-image', 'gemini-2.5-flash-image-preview', 'imagen-3.0-generate-002'],
+      video: ['veo-3.0-generate-001', 'veo-3.0-fast-generate-001', 'veo-2.0-generate-001'],
+      speech: ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts']
     }
   },
   {
-    // ElevenLabs: TTS + CLONE giọng (nhóm speech). model = TTS model; voice = voice_id (clone bên ElevenLabs).
     id: 'elevenlabs', label: 'ElevenLabs (TTS/clone)', baseUrl: 'https://api.elevenlabs.io/v1', browserHeader: null,
-    models: { speech: ['eleven_multilingual_v2', 'eleven_turbo_v2_5'] }
+    models: { speech: ['eleven_multilingual_v2', 'eleven_turbo_v2_5', 'eleven_flash_v2_5'] }
+  },
+  {
+    id: 'openrouter', label: 'OpenRouter (gộp nhiều hãng)', baseUrl: 'https://openrouter.ai/api/v1', browserHeader: null,
+    models: { text: ['anthropic/claude-sonnet-4-6', 'google/gemini-2.5-pro', 'openai/gpt-4o', 'meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-chat'] }
+  },
+  {
+    id: 'groq', label: 'Groq (siêu nhanh)', baseUrl: 'https://api.groq.com/openai/v1', browserHeader: null,
+    models: { text: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] }
+  },
+  {
+    id: 'xai', label: 'xAI (Grok)', baseUrl: 'https://api.x.ai/v1', browserHeader: null,
+    models: { text: ['grok-2-latest', 'grok-2-vision-1212'] }
+  },
+  {
+    id: 'deepseek', label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', browserHeader: null,
+    models: { text: ['deepseek-chat', 'deepseek-reasoner'] }
+  },
+  {
+    id: 'mistral', label: 'Mistral', baseUrl: 'https://api.mistral.ai/v1', browserHeader: null,
+    models: { text: ['mistral-large-latest', 'mistral-small-latest', 'pixtral-large-latest'] }
+  },
+  {
+    id: 'together', label: 'Together (FLUX/Llama)', baseUrl: 'https://api.together.xyz/v1', browserHeader: null,
+    models: { text: ['meta-llama/Llama-3.3-70B-Instruct-Turbo'], image: ['black-forest-labs/FLUX.1-schnell-Free', 'black-forest-labs/FLUX.1-dev'] }
+  },
+  {
+    // fal.ai = cổng gộp VIDEO/ẢNH lớn nhất: Kling, Runway, Luma, Minimax/Hailuo, Veo, Flux… chạy thẳng từ browser.
+    id: 'fal', label: 'fal.ai (Kling/Runway/Luma/Flux)', baseUrl: 'https://fal.run', browserHeader: null,
+    models: {
+      image: ['fal-ai/nano-banana', 'fal-ai/flux/dev', 'fal-ai/flux-pro/v1.1', 'fal-ai/flux/schnell'],
+      video: [
+        'fal-ai/kling-video/v2.5-turbo/pro/image-to-video',
+        'fal-ai/kling-video/v2/master/image-to-video',
+        'fal-ai/runway-gen3/turbo/image-to-video',
+        'fal-ai/luma-dream-machine',
+        'fal-ai/minimax/hailuo-02/standard/image-to-video',
+        'fal-ai/veo3/image-to-video'
+      ]
+    }
+  },
+  {
+    id: 'replicate', label: 'Replicate', baseUrl: 'https://api.replicate.com/v1', browserHeader: null,
+    models: { image: ['black-forest-labs/flux-dev'], video: ['kwaivgi/kling-v2.1', 'minimax/hailuo-02', 'luma/ray'] }
   },
   { id: 'custom', label: 'Custom (tự nhập URL)', baseUrl: '', browserHeader: null, models: {} }
 ]

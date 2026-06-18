@@ -34,16 +34,16 @@
                 class="flex-1 min-w-0"
                 @update:model-value="(v) => onBindProvider(cap.id, v)"
               />
-              <UiDropdown
-                :model-value="bindings[cap.id]?.model || ''"
-                :options="modelOptions(cap.id)"
-                icon="bi-cpu"
-                placeholder="model"
-                no-clear
-                full-width
-                class="flex-1 min-w-0"
-                @update:model-value="(v) => onBindModel(cap.id, v)"
+              <input
+                :value="bindings[cap.id]?.model || ''"
+                type="text"
+                :list="`mdl-${cap.id}`"
+                placeholder="model (chọn / gõ)"
+                class="apl-input h-8 text-[13px] flex-1 min-w-0 font-mono"
+                :disabled="!bindings[cap.id]?.providerId"
+                @change="onBindModel(cap.id, $event.target.value)"
               />
+              <datalist :id="`mdl-${cap.id}`"><option v-for="m in modelList(cap.id)" :key="m" :value="m" /></datalist>
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ const saving = ref(false)
 const form = reactive({ id: '', name: '', kind: 'openai', baseUrl: '', apiKey: '' })
 const hasExistingKey = ref(false)
 
-const KIND_ICON = { openai: 'bi-chat-dots', anthropic: 'bi-stars', gemini: 'bi-google', elevenlabs: 'bi-soundwave', custom: 'bi-sliders' }
+const KIND_ICON = { openai: 'bi-chat-dots', anthropic: 'bi-stars', gemini: 'bi-google', elevenlabs: 'bi-soundwave', openrouter: 'bi-diagram-3', groq: 'bi-lightning-charge', xai: 'bi-x-diamond', deepseek: 'bi-water', mistral: 'bi-wind', together: 'bi-collection', fal: 'bi-camera-reels-fill', replicate: 'bi-stack', custom: 'bi-sliders' }
 const kindIcon = (k) => KIND_ICON[k] || 'bi-plug'
 const kindLabel = (k) => PROVIDER_KINDS.find((x) => x.id === k)?.label || k
 
@@ -149,14 +149,14 @@ const kindOptions = PROVIDER_KINDS.map((k) => ({ value: k.id, label: k.label }))
 
 // Dropdown options
 const providerOptions = computed(() => [{ value: '', label: '— chưa gắn —' }, ...providers.value.map((p) => ({ value: p.id, label: p.name }))])
-function modelOptions(capId) {
+function modelList(capId) {
   const pid = bindings.value[capId]?.providerId
   const p = providers.value.find((x) => x.id === pid)
   if (!p) return []
   const list = [...prov.suggestedModels(p.kind, capId)]
   const cur = bindings.value[capId]?.model
-  if (cur && !list.includes(cur)) list.unshift(cur)   // giữ model custom đang chọn
-  return list.map((m) => ({ value: m, label: m }))
+  if (cur && !list.includes(cur)) list.unshift(cur)   // giữ model tự gõ đang chọn
+  return list
 }
 
 const presetModelsHint = computed(() => {
