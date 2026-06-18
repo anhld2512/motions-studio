@@ -100,6 +100,64 @@ export function useWorkflows() {
   // FE-only: asset = data URL / object URL nằm thẳng trong definition → không cần resolver server.
   async function getAsset() { return null }
 
-  return { items, loading, load, get, create, update, remove, invoke, test, listRuns, getRun, getAsset }
+  // #region ALD 18/06/2026 - 3 workflow MẪU sẵn để user bấm vào dùng ngay (seed 1 lần vào store).
+  const STARTERS = [
+    {
+      slug: 'tao-anh', name: 'Tạo ảnh', description: 'Nhập mô tả → AI sinh ảnh (nhóm Tạo/sửa ảnh).',
+      definition: {
+        nodes: [
+          { id: 'ci', type: 'create-image', position: { x: 80, y: 120 }, data: { config: { prompt: 'A clean cinematic product photo, premium studio lighting, high detail, photorealistic', inputCount: 0 } } },
+          { id: 'out', type: 'output', position: { x: 480, y: 120 }, data: { config: { format: 'image' } } }
+        ],
+        edges: [{ id: 'e1', source: 'ci', target: 'out' }]
+      }
+    },
+    {
+      slug: 'motion-control', name: 'Motion Control', description: 'Ảnh người mẫu + video chuyển động → video (nhóm Tạo video).',
+      definition: {
+        nodes: [
+          { id: 'in-model', type: 'input', position: { x: 60, y: 60 }, data: { config: { contentType: 'image', source: 'static', label: 'Ảnh người mẫu' } } },
+          { id: 'in-motion', type: 'input', position: { x: 60, y: 280 }, data: { config: { contentType: 'video', source: 'static', label: 'Video chuyển động' } } },
+          { id: 'm', type: 'motion', position: { x: 440, y: 160 }, data: { config: { preset: '15s-720p', aspectRatio: '9:16' } } },
+          { id: 'out', type: 'output', position: { x: 820, y: 160 }, data: { config: { format: 'video' } } }
+        ],
+        edges: [
+          { id: 'e1', source: 'in-model', target: 'm', targetHandle: 'image' },
+          { id: 'e2', source: 'in-motion', target: 'm', targetHandle: 'motion' },
+          { id: 'e3', source: 'm', target: 'out' }
+        ]
+      }
+    },
+    {
+      slug: 'thay-do-motion', name: 'Thay đồ cho mẫu + Motion', description: 'Mặc sản phẩm lên người mẫu (try-on) rồi tạo video chuyển động.',
+      definition: {
+        nodes: [
+          { id: 'in-model', type: 'input', position: { x: 40, y: 40 }, data: { config: { contentType: 'image', source: 'static', label: 'Ảnh người mẫu' } } },
+          { id: 'in-product', type: 'input', position: { x: 40, y: 240 }, data: { config: { contentType: 'image', source: 'static', label: 'Ảnh sản phẩm' } } },
+          { id: 'in-motion', type: 'input', position: { x: 40, y: 440 }, data: { config: { contentType: 'video', source: 'static', label: 'Video chuyển động' } } },
+          { id: 't', type: 'tryon', position: { x: 400, y: 120 }, data: { config: { garmentType: 'upper', productCount: 1 } } },
+          { id: 'm', type: 'motion', position: { x: 760, y: 260 }, data: { config: { preset: '15s-720p', aspectRatio: '9:16' } } },
+          { id: 'out', type: 'output', position: { x: 1120, y: 260 }, data: { config: { format: 'video' } } }
+        ],
+        edges: [
+          { id: 'e1', source: 'in-model', target: 't', targetHandle: 'model' },
+          { id: 'e2', source: 'in-product', target: 't', targetHandle: 'product' },
+          { id: 'e3', source: 't', target: 'm', targetHandle: 'image' },
+          { id: 'e4', source: 'in-motion', target: 'm', targetHandle: 'motion' },
+          { id: 'e5', source: 'm', target: 'out' }
+        ]
+      }
+    }
+  ]
+  const SEED_FLAG = 'ms.seeded.starters.v1'
+  async function seedStarters() {
+    if (!import.meta.client) return
+    if (localStorage.getItem(SEED_FLAG)) return   // seed 1 lần (xoá rồi thì không tạo lại)
+    localStorage.setItem(SEED_FLAG, '1')
+    for (const s of STARTERS) await create(s)
+  }
+  // #endregion
+
+  return { items, loading, load, get, create, update, remove, invoke, test, listRuns, getRun, getAsset, seedStarters }
 }
 // #endregion

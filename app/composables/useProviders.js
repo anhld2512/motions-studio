@@ -30,16 +30,44 @@ export function capabilityOf(nodeType) {
   return NODE_CAPABILITY[nodeType] || null
 }
 
-// Provider kind: hiện chỉ "openai" (OpenAI-compatible: nhiều provider clone chuẩn này) + "anthropic" + "gemini".
-// Mặc định 'openai' vì user chọn "cấu hình mở (custom base URL)".
+// Preset provider: base URL + danh sách model GỢI Ý theo từng nhóm năng lực (điền sẵn cho enduser).
+// model id chính xác theo nhà cung cấp (Claude: claude-opus-4-8 / claude-sonnet-4-6 / claude-haiku-4-5).
 export const PROVIDER_KINDS = [
-  { id: 'openai',    label: 'OpenAI-compatible', baseUrl: 'https://api.openai.com/v1', browserHeader: null },
-  { id: 'anthropic', label: 'Claude (Anthropic)', baseUrl: 'https://api.anthropic.com/v1', browserHeader: { 'anthropic-dangerous-direct-browser-access': 'true' } },
-  { id: 'gemini',    label: 'Google Gemini',      baseUrl: 'https://generativelanguage.googleapis.com/v1beta', browserHeader: null },
-  // ElevenLabs: TTS + CLONE giọng (nhóm speech). voice = voice_id (clone bên ElevenLabs → dán id vào node).
-  { id: 'elevenlabs', label: 'ElevenLabs (TTS/clone)', baseUrl: 'https://api.elevenlabs.io/v1', browserHeader: null },
-  { id: 'custom',    label: 'Custom (tự nhập URL)', baseUrl: '', browserHeader: null }
+  {
+    id: 'openai', label: 'OpenAI (ChatGPT)', baseUrl: 'https://api.openai.com/v1', browserHeader: null,
+    models: {
+      text: ['gpt-4o', 'gpt-4o-mini', 'o3-mini'],
+      image: ['gpt-image-1', 'dall-e-3'],
+      speech: ['gpt-4o-mini-tts'],
+      transcription: ['whisper-1']
+    }
+  },
+  {
+    id: 'anthropic', label: 'Claude (Anthropic)', baseUrl: 'https://api.anthropic.com/v1',
+    browserHeader: { 'anthropic-dangerous-direct-browser-access': 'true' },
+    models: { text: ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'] }
+  },
+  {
+    id: 'gemini', label: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta', browserHeader: null,
+    models: {
+      text: ['gemini-2.5-flash', 'gemini-2.5-pro'],
+      image: ['gemini-2.5-flash-image'],
+      video: ['veo-3.0-generate-001'],
+      speech: ['gemini-2.5-flash-preview-tts']
+    }
+  },
+  {
+    // ElevenLabs: TTS + CLONE giọng (nhóm speech). model = TTS model; voice = voice_id (clone bên ElevenLabs).
+    id: 'elevenlabs', label: 'ElevenLabs (TTS/clone)', baseUrl: 'https://api.elevenlabs.io/v1', browserHeader: null,
+    models: { speech: ['eleven_multilingual_v2', 'eleven_turbo_v2_5'] }
+  },
+  { id: 'custom', label: 'Custom (tự nhập URL)', baseUrl: '', browserHeader: null, models: {} }
 ]
+
+// Model gợi ý cho 1 provider theo capability (mảng id). Trả [] nếu provider/custom không có preset.
+export function suggestedModels(kindId, capability) {
+  return PROVIDER_KINDS.find((k) => k.id === kindId)?.models?.[capability] || []
+}
 
 function _uid() {
   // Math.random/Date.now bị cấm trong workflow scripts, nhưng đây là composable FE bình thường → OK.
@@ -74,12 +102,15 @@ export function useProviders() {
   async function saveProvider({ id, name, kind = 'openai', baseUrl = '', plainApiKey, models = {}, extraHeaders = {} }) {
     _load()
     const kindDef = PROVIDER_KINDS.find((k) => k.id === kind)
+    // models mặc định = model ĐẦU TIÊN trong preset của kind cho mỗi capability (để resolve() có fallback).
+    const defaultModels = {}
+    for (const [cap, list] of Object.entries(kindDef?.models || {})) if (list?.[0]) defaultModels[cap] = list[0]
     const rec = {
       id: id || _uid(),
       name: name || kindDef?.label || 'Provider',
       kind,
       baseUrl: baseUrl || kindDef?.baseUrl || '',
-      models: models || {},        // { text:'gpt-4o', image:'gpt-image-1', ... } default model theo capability
+      models: (models && Object.keys(models).length) ? models : defaultModels,
       extraHeaders: extraHeaders || {}
     }
     const existing = providers.value.find((p) => p.id === rec.id)
@@ -147,7 +178,7 @@ export function useProviders() {
   return {
     providers, bindings, CAPABILITIES, PROVIDER_KINDS,
     load: _load, saveProvider, removeProvider, setBinding, bindingFor, resolve, revealKey,
-    capabilityOf, hasKey: (p) => !!p?.apiKeyEnc, mask: vault.mask
+    capabilityOf, suggestedModels, hasKey: (p) => !!p?.apiKeyEnc, mask: vault.mask
   }
 }
 // #endregion

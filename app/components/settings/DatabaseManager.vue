@@ -44,7 +44,7 @@
       <section class="glass shadow-card rounded-3xl p-4 space-y-2">
         <h3 class="text-sm font-bold text-gray-900"><i class="bi bi-images me-1.5 text-violet-600" />Lưu trữ file — tuỳ chọn</h3>
         <p class="text-[11.5px] text-gray-500 leading-snug">
-          Có Supabase → ảnh/video/audio sinh ra upload lên <b>Storage</b>; không → giữ data URL (localStorage). Key <b>mã hoá</b> 🔒.
+          Có Supabase → ảnh/video/audio sinh ra upload lên <b>Storage</b>; không → giữ data URL (localStorage). Key <b>mã hoá</b> <i class="bi bi-lock-fill" />.
         </p>
         <div class="grid grid-cols-3 gap-2">
           <input v-model="fs.url" type="text" placeholder="https://xxx.supabase.co" class="apl-input font-mono text-[12px] col-span-2" autocomplete="off" />

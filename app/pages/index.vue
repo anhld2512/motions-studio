@@ -118,6 +118,7 @@ const fileStore = useFileStore()
 db.load(); fileStore.load()
 
 onMounted(async () => {
+  try { await workflows.seedStarters() } catch { /* OK */ }   // 3 workflow mẫu (seed 1 lần)
   try { await workflows.load() } catch { /* OK */ }
 })
 

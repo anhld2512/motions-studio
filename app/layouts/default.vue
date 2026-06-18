@@ -178,6 +178,8 @@ const sidebarOpen = useStorage('motions_sidebar_open', false)
 const navItems = [
   { to: '/',          icon: 'bi-house-door', label: 'Tổng quan' },
   { to: '/workflows', icon: 'bi-diagram-3',  label: 'Workflows' },
+  { to: '/monitor',   icon: 'bi-activity',   label: 'Giám sát' },
+  { to: '/reports',   icon: 'bi-bar-chart',  label: 'Báo cáo' },
   { to: '/settings',  icon: 'bi-sliders',    label: 'Cài đặt' }
 ]
 
