@@ -51,8 +51,8 @@ export const PROVIDER_KINDS = [
     id: 'gemini', label: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta', browserHeader: null,
     models: {
       text: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'],
-      // gemini-2.5-flash-image = "Nano Banana" (tạo/sửa ảnh); imagen = sinh ảnh thuần.
-      image: ['gemini-2.5-flash-image', 'gemini-2.5-flash-image-preview', 'imagen-3.0-generate-002'],
+      // "Nano Banana" = gemini-2.5-flash-image · "Nano Banana Pro" = gemini-3-pro-image-preview · imagen = sinh ảnh thuần.
+      image: ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image-preview', 'imagen-4.0-generate-001', 'imagen-3.0-generate-002'],
       video: ['veo-3.0-generate-001', 'veo-3.0-fast-generate-001', 'veo-2.0-generate-001'],
       speech: ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts']
     }

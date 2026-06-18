@@ -24,26 +24,31 @@
                 <div class="text-[10.5px] text-gray-400 truncate">{{ cap.hint }}</div>
               </div>
             </div>
-            <div class="flex gap-1.5">
-              <UiDropdown
-                :model-value="bindings[cap.id]?.providerId || ''"
-                :options="providerOptions"
-                icon="bi-plug"
-                placeholder="Chưa gắn"
-                full-width
-                class="flex-1 min-w-0"
-                @update:model-value="(v) => onBindProvider(cap.id, v)"
-              />
+            <UiDropdown
+              :model-value="bindings[cap.id]?.providerId || ''"
+              :options="providerOptions"
+              icon="bi-plug"
+              placeholder="Chưa gắn provider"
+              full-width
+              @update:model-value="(v) => onBindProvider(cap.id, v)"
+            />
+            <!-- Model: chip bấm nhanh (hiện rõ) + ô tự nhập -->
+            <div v-if="bindings[cap.id]?.providerId" class="mt-2">
+              <div v-if="modelList(cap.id).length" class="flex flex-wrap gap-1 mb-1.5">
+                <button
+                  v-for="m in modelList(cap.id)" :key="m" type="button"
+                  :class="['apl-mchip', bindings[cap.id]?.model === m && 'is-active']"
+                  :title="MODEL_NOTE[m]"
+                  @click="onBindModel(cap.id, m)"
+                >{{ MODEL_NOTE[m] || m }}</button>
+              </div>
               <input
                 :value="bindings[cap.id]?.model || ''"
                 type="text"
-                :list="`mdl-${cap.id}`"
-                placeholder="model (chọn / gõ)"
-                class="apl-input h-8 text-[13px] flex-1 min-w-0 font-mono"
-                :disabled="!bindings[cap.id]?.providerId"
+                placeholder="hoặc gõ model id…"
+                class="apl-input h-8 text-[12.5px] w-full font-mono"
                 @change="onBindModel(cap.id, $event.target.value)"
               />
-              <datalist :id="`mdl-${cap.id}`"><option v-for="m in modelList(cap.id)" :key="m" :value="m" /></datalist>
             </div>
           </div>
         </div>
@@ -142,6 +147,12 @@ const hasExistingKey = ref(false)
 
 const KIND_ICON = { openai: 'bi-chat-dots', anthropic: 'bi-stars', gemini: 'bi-google', elevenlabs: 'bi-soundwave', openrouter: 'bi-diagram-3', groq: 'bi-lightning-charge', xai: 'bi-x-diamond', deepseek: 'bi-water', mistral: 'bi-wind', together: 'bi-collection', fal: 'bi-camera-reels-fill', replicate: 'bi-stack', custom: 'bi-sliders' }
 const kindIcon = (k) => KIND_ICON[k] || 'bi-plug'
+// Nhãn thân thiện cho 1 số model nổi tiếng (chip hiển thị tên này thay vì id thô).
+const MODEL_NOTE = {
+  'gemini-2.5-flash-image': 'Nano Banana',
+  'gemini-3-pro-image-preview': 'Nano Banana Pro',
+  'fal-ai/nano-banana': 'Nano Banana (fal)'
+}
 const kindLabel = (k) => PROVIDER_KINDS.find((x) => x.id === k)?.label || k
 
 const PRESET_KINDS = PROVIDER_KINDS.filter((k) => k.id !== 'custom')
@@ -216,4 +227,7 @@ function onBindModel(cap, model) {
   transition: border-color .15s, box-shadow .15s;
 }
 .apl-input:focus { border-color: #007AFF; box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+.apl-mchip { padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; background: white; border: 1px solid rgba(60,60,67,0.16); color: #3c3c43; cursor: pointer; transition: all .12s; }
+.apl-mchip:hover { border-color: #007AFF; color: #007AFF; }
+.apl-mchip.is-active { background: #2563eb; color: white; border-color: #2563eb; }
 </style>

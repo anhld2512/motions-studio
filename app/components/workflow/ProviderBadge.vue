@@ -18,10 +18,12 @@
         <UiDropdown :model-value="binding?.providerId || ''" :options="providerOptions" icon="bi-plug" placeholder="Chọn provider" full-width @update:model-value="bindProvider" />
 
         <template v-if="bound">
-          <label class="pb-label mt-2">Model <span class="pb-cap font-normal normal-case">(chọn hoặc tự gõ)</span></label>
-          <input :value="curModel" type="text" class="pb-input mt-1.5 font-mono" :list="`pbm-${capability}`"
-            placeholder="chọn từ danh sách hoặc gõ model id" @change="setModel($event.target.value)" />
-          <datalist :id="`pbm-${capability}`"><option v-for="m in allModels" :key="m" :value="m" /></datalist>
+          <label class="pb-label mt-2">Model <span class="pb-cap font-normal normal-case">(bấm chọn hoặc tự gõ)</span></label>
+          <div v-if="allModels.length" class="pb-chips">
+            <button v-for="m in allModels" :key="m" type="button" :class="['pb-chip', curModel === m && 'is-active']" :title="MODEL_NOTE[m]" @click="setModel(m)">{{ MODEL_NOTE[m] || m }}</button>
+          </div>
+          <input :value="curModel" type="text" class="pb-input mt-1.5 font-mono text-[12px]"
+            placeholder="hoặc gõ model id…" @change="setModel($event.target.value)" />
         </template>
 
         <button type="button" class="pb-add" @click="startNew"><i class="bi bi-plus-lg me-1" />Provider mới (tự lưu vào Cài đặt)</button>
@@ -52,6 +54,8 @@ const props = defineProps({ capability: { type: String, required: true } })
 const prov = useProviders()
 const { providers, bindings, PROVIDER_KINDS } = prov
 prov.load()
+
+const MODEL_NOTE = { 'gemini-2.5-flash-image': 'Nano Banana', 'gemini-3-pro-image-preview': 'Nano Banana Pro', 'fal-ai/nano-banana': 'Nano Banana (fal)' }
 
 const open = ref(false)
 const mode = ref('pick')         // 'pick' | 'new'
