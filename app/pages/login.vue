@@ -7,10 +7,9 @@
       <div class="absolute -top-1/4 -right-1/4 w-2/3 aspect-square rounded-full bg-white/10 blur-3xl" />
       <div class="absolute -bottom-1/4 -left-1/4 w-2/3 aspect-square rounded-full bg-indigo-400/30 blur-3xl" />
       <div class="relative flex items-center gap-3 text-white">
-        <span class="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-black/80 shadow-island">
-          <img src="/brand/motions-98m-tiger-favicon.png" alt="" class="h-full w-full object-cover" />
+        <span class="inline-flex h-14 w-44 items-center justify-center rounded-2xl bg-black/55 px-3 py-2 shadow-island">
+          <img :src="appConfig.app.logoDark" :alt="appConfig.app.name" class="h-full w-full object-contain" />
         </span>
-        <span class="text-lg font-bold tracking-tight">{{ appConfig.app.name }}</span>
       </div>
       <div class="relative text-white">
         <h1 class="text-5xl font-black leading-tight tracking-tight">
@@ -31,7 +30,7 @@
       <div class="w-full max-w-sm">
         <div class="mb-6 sm:mb-8 text-center lg:text-left">
           <div class="inline-flex lg:hidden h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-black text-white font-bold mb-4">
-            <img src="/brand/motions-98m-tiger-favicon.png" alt="" class="h-full w-full object-cover" />
+            <img :src="appConfig.app.logoIcon" alt="" class="h-full w-full object-cover" />
           </div>
           <h2 class="text-2xl font-bold text-gray-900">
             {{ step === 'email' ? 'Đăng nhập' : 'Nhập mã xác thực' }}

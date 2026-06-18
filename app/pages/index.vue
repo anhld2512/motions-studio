@@ -3,8 +3,8 @@
   <div class="flex-1 min-h-0 overflow-hidden flex flex-col px-3 sm:px-6 py-3 gap-3">
     <!-- Header gọn: tiêu đề + chip thống kê + nút -->
     <header class="glass shadow-island rounded-3xl px-4 sm:px-6 py-3 flex-shrink-0 flex items-center gap-4 flex-wrap">
-      <div class="h-12 w-12 overflow-hidden rounded-2xl bg-black shadow-card flex-shrink-0">
-        <img src="/brand/motions-98m-tiger-favicon.png" alt="" class="h-full w-full object-cover" />
+      <div class="h-14 w-[148px] sm:w-[180px] rounded-2xl bg-black shadow-card flex-shrink-0 px-3 py-2 flex items-center">
+        <img :src="appConfig.app.logoDark" :alt="appConfig.app.name" class="h-full w-full object-contain" />
       </div>
       <div class="min-w-0 flex-1">
         <p class="text-[10px] font-bold uppercase tracking-widest text-primary leading-none">
@@ -114,6 +114,7 @@
 definePageMeta({ middleware: 'auth' })
 
 const { t } = useI18n()
+const appConfig = useAppConfig()
 useHead({ title: t('home.pageTitle') })
 
 const workflows = useWorkflows()

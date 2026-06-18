@@ -28,13 +28,8 @@
     >
       <!-- Brand + close -->
       <div class="flex items-center justify-between gap-2 p-3 border-b border-white/40">
-        <NuxtLink to="/" class="flex items-center gap-2.5 min-w-0 press" @click="sidebarOpen = false">
-          <span class="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-card flex-shrink-0">
-            <img src="/brand/motions-98m-tiger-favicon.png" alt="" class="h-full w-full object-cover" />
-          </span>
-          <span class="text-sm font-black title-gradient tracking-tight truncate">
-            {{ appConfig.app.name }}
-          </span>
+        <NuxtLink to="/" class="flex items-center min-w-0 press" @click="sidebarOpen = false">
+          <img :src="appConfig.app.logoLight" :alt="appConfig.app.name" class="h-11 w-auto max-w-[172px] object-contain" />
         </NuxtLink>
         <button
           type="button"
@@ -145,7 +140,7 @@
 
         <NuxtLink to="/" class="hidden sm:flex items-center gap-2 min-w-0 flex-shrink-0 press">
           <span class="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-card">
-            <img src="/brand/motions-98m-tiger-favicon.png" alt="" class="h-full w-full object-cover" />
+            <img :src="appConfig.app.logoIcon" alt="" class="h-full w-full object-cover" />
           </span>
         </NuxtLink>
 

@@ -15,7 +15,7 @@
       <div class="apl-sidebar-header">
         <NuxtLink to="/" class="apl-back apl-back-brand">
           <span class="apl-back-logo">
-            <img src="/brand/motions-98m-tiger-favicon.png" alt="" />
+            <img :src="appConfig.app.logoIcon" alt="" />
           </span>
           <span>Workflows</span>
         </NuxtLink>
@@ -65,7 +65,7 @@
       <div class="apl-topbar">
         <div class="min-w-0 flex items-center gap-3">
           <span class="apl-topbar-logo">
-            <img src="/brand/motions-98m-tiger-favicon.png" alt="" />
+            <img :src="appConfig.app.logoIcon" alt="" />
           </span>
           <div class="min-w-0">
             <h1 class="apl-title">{{ workflow?.name || '...' }}</h1>
@@ -205,7 +205,7 @@
           </VueFlow>
           <div v-if="nodes.length === 0" class="apl-empty-state">
             <span class="apl-empty-icon">
-              <img src="/brand/motions-98m-tiger-favicon.png" alt="" />
+              <img :src="appConfig.app.logoIcon" alt="" />
             </span>
             <p class="apl-empty-title">{{ t('editor.canvasEmpty') }}</p>
             <p class="apl-empty-hint">{{ t('editor.canvasEmptyHint') }}</p>
@@ -903,6 +903,7 @@ import FlowNode from '~/components/workflow/FlowNode.vue'
 definePageMeta({ middleware: 'auth', layout: 'default' })
 
 const route = useRoute()
+const appConfig = useAppConfig()
 const wf = useWorkflows()
 const db = useLocalDb()
 const fileStore = useFileStore(); fileStore.load()
