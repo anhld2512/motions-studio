@@ -160,6 +160,17 @@ export function useFileStore() {
     return ''   // lần đầu trả rỗng; khi nạp xong objCache đổi → template re-render.
   }
 
+  // Chuyển ref về dạng provider GỬI ĐƯỢC: idb:// → data URL base64; http/https/data: giữ nguyên.
+  // (Provider đám mây không fetch được idb://, phải nhúng base64 hoặc URL công khai.)
+  async function toSendable(url) {
+    if (!url || typeof url !== 'string') return url
+    if (!url.startsWith('idb://')) return url
+    if (!import.meta.client) return url
+    const blob = await _idbGet(url.slice(6))
+    if (!blob) return url
+    return await new Promise((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => res(url); r.readAsDataURL(blob) })
+  }
+
   // Quản lý file cục bộ (cho trang/section "Lưu trữ").
   async function listLocalFiles() { return import.meta.client ? await _idbListMeta() : [] }
   async function removeLocalFile(id) { if (import.meta.client) await _idbDel(id) }
@@ -181,7 +192,7 @@ export function useFileStore() {
     return true
   }
 
-  return { cfg, load, enabled, saveConfig, clearConfig, putFile, mediaSrc, testConnection, mask: vault.mask,
+  return { cfg, load, enabled, saveConfig, clearConfig, putFile, mediaSrc, toSendable, testConnection, mask: vault.mask,
            listLocalFiles, removeLocalFile, clearLocalFiles, localUsage }
 }
 // #endregion

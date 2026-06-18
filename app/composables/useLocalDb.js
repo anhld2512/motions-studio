@@ -50,6 +50,12 @@ export function useLocalDb() {
   function _load() {
     if (loaded.value || !import.meta.client) return
     try { cfg.value = { mode: 'local', url: '', synced: false, ...(JSON.parse(localStorage.getItem(CFG_KEY) || '{}')) } } catch {}
+    // Tự lành 1 lần: dọn run cũ bị phình (data: URL base64 / quá nhiều run) ngay khi mở app.
+    try {
+      const raw = localStorage.getItem(LS_COLL + 'workflow_runs')
+      if (raw && raw.length > 1_500_000) _lsWrite('workflow_runs', JSON.parse(raw))
+    } catch { try { localStorage.removeItem(LS_COLL + 'workflow_runs') } catch {} }
+    try { localStorage.removeItem('wf:test:' + 'undefined') } catch {}
     loaded.value = true
   }
   function _saveCfg() { if (import.meta.client) localStorage.setItem(CFG_KEY, JSON.stringify(cfg.value)) }
@@ -68,10 +74,15 @@ export function useLocalDb() {
     const slimMeta = { image: meta.image, images: meta.images, video: meta.video, audio: meta.audio, text: typeof meta.text === 'string' ? meta.text.slice(0, 2000) : meta.text }
     return { ...r, definition: undefined, events: (r.events || []).slice(-8).map((e) => ({ ts: e.ts, level: e.level, msg: e.msg })), output: { ...(r.output || {}), metadata: slimMeta } }
   }
+  // Bỏ MỌI data: URL base64 (thủ phạm phình quota) khỏi run trước khi lưu — media thật đã ở IndexedDB (idb://).
+  function _stripDataUrls(arr) {
+    return JSON.parse(JSON.stringify(arr, (k, v) =>
+      (typeof v === 'string' && v.length > 500 && v.startsWith('data:')) ? '' : v))
+  }
   function _lsWrite(coll, rows) {
-    // Cap số run mới nhất trước khi ghi.
+    // Cap số run mới nhất + bỏ data: URL trước khi ghi.
     let data = rows
-    if (coll === 'workflow_runs') data = rows.slice().sort(_byNewest).slice(0, MAX_RUNS)
+    if (coll === 'workflow_runs') data = _stripDataUrls(rows.slice().sort(_byNewest).slice(0, MAX_RUNS))
     try {
       localStorage.setItem(LS_COLL + coll, JSON.stringify(data))
       return

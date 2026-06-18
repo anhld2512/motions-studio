@@ -125,6 +125,11 @@ export function useProviderClient() {
       onProgress('Đang tạo video qua fal.ai… (có thể vài phút)')
       const body = { prompt }
       if (opts.image) body.image_url = opts.image
+      // Video mẫu (motion reference) — model SAO CHÉP CHUYỂN ĐỘNG (vd wan-animate, runway act-two, live-portrait) đọc qua video_url.
+      if (opts.motionVideo) { body.video_url = opts.motionVideo; body.driving_video_url = opts.motionVideo }
+      if (opts.duration) body.duration = String(opts.duration)
+      if (opts.aspectRatio) body.aspect_ratio = opts.aspectRatio
+      if (opts.resolution) body.resolution = opts.resolution
       const data = await _postJson(`${baseUrl}/${model || 'fal-ai/kling-video/v2/master/image-to-video'}`, { Authorization: `Key ${apiKey}`, ...headers }, body)
       const url = data?.video?.url || data?.videos?.[0]?.url
       if (!url) throw new Error('fal không trả video')

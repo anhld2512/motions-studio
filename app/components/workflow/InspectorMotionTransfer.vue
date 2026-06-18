@@ -11,10 +11,21 @@
       <p class="ins-hint" v-html="t('inspector.motionTransfer.promptHint')"></p>
     </div>
 
-    <div>
-      <label class="ins-label">{{ t('inspector.motionTransfer.aspectRatioLabel') }}</label>
-      <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
+    <div class="grid grid-cols-3 gap-2">
+      <div>
+        <label class="ins-label">{{ t('inspector.motionTransfer.aspectRatioLabel') }}</label>
+        <UiDropdown v-model="local.aspectRatio" :options="ASPECTS" icon="bi-aspect-ratio" full-width no-clear class="mt-1.5" />
+      </div>
+      <div>
+        <label class="ins-label">{{ t('inspector.motionTransfer.durationLabel') }}</label>
+        <UiDropdown v-model="local.duration" :options="DURATIONS" icon="bi-clock" full-width no-clear class="mt-1.5" />
+      </div>
+      <div>
+        <label class="ins-label">{{ t('inspector.motionTransfer.qualityLabel') }}</label>
+        <UiDropdown v-model="local.resolution" :options="QUALITIES" icon="bi-badge-hd" full-width no-clear class="mt-1.5" />
+      </div>
     </div>
+    <p class="ins-hint">{{ t('inspector.motionTransfer.durationHint') }}</p>
   </div>
   <!-- #endregion -->
 </template>
@@ -31,8 +42,15 @@ const ASPECTS = computed(() => [
   { value: '9:16', label: t('inspector.motionTransfer.aspect.vertical') }, { value: '16:9', label: t('inspector.motionTransfer.aspect.horizontal') },
   { value: '1:1', label: t('inspector.motionTransfer.aspect.square') }, { value: '4:3', label: '4:3' }
 ])
+const DURATIONS = [
+  { value: 5, label: '5s' }, { value: 10, label: '10s' }, { value: 15, label: '15s' }, { value: 30, label: '30s' }
+]
+const QUALITIES = [
+  { value: '480p', label: '480p' }, { value: '720p', label: '720p' }, { value: '1080p', label: '1080p' },
+  { value: '2k', label: '2K' }, { value: '4k', label: '4K' }
+]
 
-const local = ref({ prompt: '', aspectRatio: '9:16', ...props.config })
+const local = ref({ prompt: '', aspectRatio: '9:16', duration: 5, resolution: '720p', ...props.config })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 watch(() => props.config, (v) => { if (v && JSON.stringify(v) !== JSON.stringify(local.value)) local.value = { ...local.value, ...v } })
 </script>

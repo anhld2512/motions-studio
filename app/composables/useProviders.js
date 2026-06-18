@@ -91,6 +91,9 @@ export const PROVIDER_KINDS = [
     models: {
       image: ['fal-ai/nano-banana', 'fal-ai/flux/dev', 'fal-ai/flux-pro/v1.1', 'fal-ai/flux/schnell'],
       video: [
+        'fal-ai/wan-animate',
+        'fal-ai/runway-act-two',
+        'fal-ai/live-portrait',
         'fal-ai/kling-video/v2.5-turbo/pro/image-to-video',
         'fal-ai/kling-video/v2/master/image-to-video',
         'fal-ai/runway-gen3/turbo/image-to-video',

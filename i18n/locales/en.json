@@ -98,7 +98,10 @@
         "vertical": "Vertical 9:16",
         "horizontal": "Horizontal 16:9",
         "square": "Square 1:1"
-      }
+      },
+      "durationLabel": "Duration",
+      "qualityLabel": "Quality",
+      "durationHint": "Duration & quality are requested from the provider — actual output depends on the model/provider support."
     },
     "ss": {
       "promptLabel": "Motion description (prompt)",

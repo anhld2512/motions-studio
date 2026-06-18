@@ -141,7 +141,7 @@ export function useWorkflowEngine() {
         if (cap === 'image') {
           await emit(node.id, 'info', 'Đang tạo ảnh…')
           const rsv = await providers.resolve('image')
-          const refs = imageUrlsFrom(g)
+          const refs = await Promise.all(imageUrlsFrom(g).map((u) => fileStore.toSendable(u)))
           const prompt = _imagePrompt(type, c, textFrom(g))
           const { url } = await client.generateImage(rsv, prompt, { images: refs, size: c.size })
           const stored = await fileStore.putFile(url, { prefix: 'image', contentType: 'image/png' })
@@ -154,9 +154,16 @@ export function useWorkflowEngine() {
         if (cap === 'video') {
           await emit(node.id, 'info', 'Đang tạo video… (có thể vài phút)')
           const rsv = await providers.resolve('video')
-          const refs = imageUrlsFrom(g)
+          const refs = await Promise.all(imageUrlsFrom(g).map((u) => fileStore.toSendable(u)))
+          // Video mẫu (motion reference) — node Motion Transfer dùng để SAO CHÉP chuyển động.
+          const motionRaw = (g.list || []).find((o) => o && o.kind === 'video' && o.url)?.url
+          const motionVideo = motionRaw ? await fileStore.toSendable(motionRaw) : ''
           const prompt = (c.prompt || c.script || textFrom(g) || 'A short cinematic clip').trim()
-          const { url } = await client.generateVideo(rsv, prompt, { image: refs[0], aspectRatio: c.aspectRatio, onProgress: (m) => emit(node.id, 'info', m) })
+          const { url } = await client.generateVideo(rsv, prompt, {
+            image: refs[0], motionVideo, aspectRatio: c.aspectRatio,
+            duration: c.duration, resolution: c.resolution,
+            onProgress: (m) => emit(node.id, 'info', m)
+          })
           const stored = await fileStore.putFile(url, { prefix: 'video', contentType: 'video/mp4' })
           outputs.set(node.id, { kind: 'video', url: stored })
           await emit(node.id, 'success', 'Đã tạo video', { previewUrl: stored, previewKind: 'video' })

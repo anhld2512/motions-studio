@@ -98,7 +98,10 @@
         "vertical": "Dọc 9:16",
         "horizontal": "Ngang 16:9",
         "square": "Vuông 1:1"
-      }
+      },
+      "durationLabel": "Thời lượng",
+      "qualityLabel": "Chất lượng",
+      "durationHint": "Thời lượng & chất lượng là yêu cầu gửi tới provider — kết quả thực tế tùy model/nhà cung cấp hỗ trợ."
     },
     "ss": {
       "promptLabel": "Mô tả chuyển động (prompt)",
