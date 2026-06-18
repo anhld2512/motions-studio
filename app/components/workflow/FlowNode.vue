@@ -96,7 +96,8 @@
     </div>
 
     <div class="apl-body">
-      <span class="apl-icon">
+      <span :class="['apl-icon', isBrandNode && 'apl-icon-brand']">
+        <img v-if="isBrandNode" src="/brand/motions-98m-tiger-favicon.png" alt="" />
         <i :class="['bi', icon]" />
       </span>
       <div class="apl-text">
@@ -254,7 +255,7 @@ const icon = computed(() => meta.value.icon)
 const NODE_BIL = {
   input: { vi: 'Đầu vào', en: 'Input' },
   validate: { vi: 'Kiểm tra', en: 'Validate' },
-  motion: { vi: 'Điều khiển chuyển động', en: 'Motion Control' },
+  motion: { vi: 'Sao chép chuyển động', en: 'Motion Transfer' },
   tryon: { vi: 'Thử đồ', en: 'Try-on' },
   'create-image': { vi: 'Tạo ảnh', en: 'Create Image' },
   compose: { vi: 'Ghép vào mẫu', en: 'Compose' },
@@ -422,6 +423,7 @@ function inputSubtitle(c, type) {
 
 // Render error handle khi user bật "On Failure: route" trong inspector
 const errorRouted = computed(() => (props.data.config?.onError) === 'route')
+const isBrandNode = computed(() => ['motion', 'fashion-motion', 'wan-i2v', 'ss', 'teaser'].includes(props.data.type))
 
 // ALD 24/05/2026 - Bootstrap icon class theo garmentType (NO emoji). Bootstrap Icons không
 // có shirt/dress chuyên dụng → map tương đối:
@@ -878,6 +880,18 @@ watch(() => multiTargets.value.length, () => nextTick(() => _syncHandles()))
     inset 0 0.5px 0 rgba(255,255,255,0.6),
     0 0.5px 2px rgba(0,0,0,0.04);
 }
+.apl-icon-brand {
+  overflow: hidden;
+  background: #050505;
+  color: transparent;
+}
+.apl-icon-brand img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.apl-icon-brand i { display: none; }
 .apl-text { min-width: 0; flex: 1; }
 .apl-label {
   font-size: 14.5px;

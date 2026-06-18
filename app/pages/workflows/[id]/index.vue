@@ -13,8 +13,10 @@
     <!-- LEFT — node palette -->
     <aside class="apl-sidebar apl-sidebar-left">
       <div class="apl-sidebar-header">
-        <NuxtLink to="/" class="apl-back">
-          <i class="bi bi-chevron-left" />
+        <NuxtLink to="/" class="apl-back apl-back-brand">
+          <span class="apl-back-logo">
+            <img src="/brand/motions-98m-tiger-favicon.png" alt="" />
+          </span>
           <span>Workflows</span>
         </NuxtLink>
       </div>
@@ -62,6 +64,9 @@
            grouping secondary (Lịch sử / Runs) vs primary (Chạy workflow + Lưu). -->
       <div class="apl-topbar">
         <div class="min-w-0 flex items-center gap-3">
+          <span class="apl-topbar-logo">
+            <img src="/brand/motions-98m-tiger-favicon.png" alt="" />
+          </span>
           <div class="min-w-0">
             <h1 class="apl-title">{{ workflow?.name || '...' }}</h1>
             <p class="apl-subtitle">/{{ workflow?.slug }}</p>
@@ -200,7 +205,7 @@
           </VueFlow>
           <div v-if="nodes.length === 0" class="apl-empty-state">
             <span class="apl-empty-icon">
-              <i class="bi bi-stars" />
+              <img src="/brand/motions-98m-tiger-favicon.png" alt="" />
             </span>
             <p class="apl-empty-title">{{ t('editor.canvasEmpty') }}</p>
             <p class="apl-empty-hint">{{ t('editor.canvasEmptyHint') }}</p>
@@ -925,7 +930,7 @@ const { lang: uiLang } = useLang()
 const NODE_VI = {
   'input-text': 'Nhập văn bản', 'input-image': 'Nhập ảnh', 'input-video': 'Nhập video', 'input-audio': 'Nhập âm thanh', 'input-file': 'Nhập file',
   output: 'Kết quả', 'create-image': 'Tạo ảnh', tryon: 'Thử đồ', compose: 'Ghép vào mẫu',
-  motion: 'Điều khiển chuyển động', 'fashion-motion': 'Thời trang chuyển động', ss: 'Ảnh → Video', 'wan-i2v': 'Ảnh đầu → cuối',
+  motion: 'Sao chép chuyển động', 'fashion-motion': 'Thời trang chuyển động', ss: 'Ảnh → Video', 'wan-i2v': 'Ảnh đầu → cuối',
   'text-to-video': 'Văn bản → Video', teaser: 'Teaser', bds: 'Tua nhanh xây dựng',
   talk: 'Nói (lip-sync)', voiceover: 'Lồng tiếng', concat: 'Ghép cảnh', subtitle: 'Phụ đề / Dịch'
 }
@@ -3067,7 +3072,7 @@ function inspectorComponent(type) {
 .apl-back {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   color: var(--apl-blue);
   font-size: 15px;
   font-weight: 400;
@@ -3076,6 +3081,34 @@ function inspectorComponent(type) {
 }
 .apl-back:hover { opacity: 0.7; }
 .apl-back .bi { font-size: 17px; margin-top: 1px; }
+.apl-back-brand { font-weight: 600; color: var(--apl-label); }
+.apl-back-logo,
+.apl-topbar-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #050505;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.apl-back-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+}
+.apl-topbar-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.apl-back-logo img,
+.apl-topbar-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 
 .apl-search-wrap {
   position: relative;
@@ -3445,7 +3478,10 @@ function inspectorComponent(type) {
   font-size: 22px;
   color: var(--apl-blue);
   margin-bottom: 12px;
+  overflow: hidden;
+  background: #050505;
 }
+.apl-empty-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .apl-empty-title { font-size: 15px; font-weight: 600; color: var(--apl-label); }
 .apl-empty-hint  { font-size: 12px; color: var(--apl-label-2); margin-top: 2px; }
 
