@@ -2,6 +2,7 @@
   "name": "motions-studio",
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev --port 2031 --host 0.0.0.0",
