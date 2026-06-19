@@ -103,7 +103,7 @@ const props = defineProps({
 const emit = defineEmits(['update:config'])
 
 const local = reactive({
-  label: props.config.label || 'Debug step',
+  label: props.config.label || t('inspector.debug.defaultLabel'),
   captureImage: props.config.captureImage !== false,
   captureVideo: props.config.captureVideo !== false,
   captureAudio: props.config.captureAudio || false,
@@ -111,12 +111,12 @@ const local = reactive({
 })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 
-const TOGGLES = [
-  { key: 'captureImage', icon: 'bi-image',          label: 'Capture image' },
-  { key: 'captureVideo', icon: 'bi-film',           label: 'Capture video' },
-  { key: 'captureAudio', icon: 'bi-music-note-beamed', label: 'Capture audio' },
-  { key: 'captureText',  icon: 'bi-chat-left-text', label: 'Capture text' }
-]
+const TOGGLES = computed(() => [
+  { key: 'captureImage', icon: 'bi-image',          label: t('inspector.debug.captureImage') },
+  { key: 'captureVideo', icon: 'bi-film',           label: t('inspector.debug.captureVideo') },
+  { key: 'captureAudio', icon: 'bi-music-note-beamed', label: t('inspector.debug.captureAudio') },
+  { key: 'captureText',  icon: 'bi-chat-left-text', label: t('inspector.debug.captureText') }
+])
 
 // ─── RESULT: đọc từ runtime ─────────────────────────────────────────────
 // runtime shape mong đợi: { output: NodeOutput, events: [{ts, level, msg, extra}], durationMs }

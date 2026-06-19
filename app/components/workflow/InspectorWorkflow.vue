@@ -1,22 +1,23 @@
 <template>
   <div class="space-y-3">
     <div>
-      <label class="apl-label">Workflow slug để gọi</label>
+      <label class="apl-label">{{ t('inspector.subworkflow.slugLabel') }}</label>
       <select v-model="local.slug" class="apl-input mt-1.5 font-mono">
-        <option value="">— Chọn —</option>
+        <option value="">{{ t('inspector.subworkflow.selectPlaceholder') }}</option>
         <option v-for="w in availableSlugs" :key="w.slug" :value="w.slug">/{{ w.slug }} · {{ w.name }}</option>
       </select>
-      <p class="apl-hint">Workflow này chạy như sub-step. Output text node trước thành <code>input.text</code> của nested workflow.</p>
+      <p class="apl-hint">{{ t('inspector.subworkflow.hintPrefix') }} <code>input.text</code> {{ t('inspector.subworkflow.hintSuffix') }}</p>
     </div>
     <div v-if="local.slug" class="apl-info">
       <i class="bi bi-info-circle mr-1" />
-      Tối đa 5 level nesting. Cycle (A→B→A) sẽ throw error.
+      {{ t('inspector.subworkflow.nestingNote') }}
     </div>
   </div>
 </template>
 <script setup>
 const props = defineProps({ config: { type: Object, required: true } })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 const local = reactive({ slug: props.config.slug || '' })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 

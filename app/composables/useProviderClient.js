@@ -18,10 +18,11 @@ async function _postJson(url, headers, body) {
 }
 
 export function useProviderClient() {
+  const { $i18n } = useNuxtApp()
   // ── CHAT / TEXT ──
   // messages: [{ role:'system'|'user'|'assistant', content }]. Trả { text }.
   async function chat(rsv, messages, opts = {}) {
-    if (!rsv) throw new Error('Chưa gắn provider cho nhóm "Văn bản". Vào Cài đặt → Provider.')
+    if (!rsv) throw new Error($i18n.t('engine.noProviderText'))
     const { baseUrl, apiKey, model, headers, provider } = rsv
     const kind = provider?.kind || 'openai'
     const temperature = opts.temperature ?? 0.4
@@ -55,7 +56,7 @@ export function useProviderClient() {
   // ── IMAGE ──
   // prompt + ảnh tham chiếu (data URL / URL) tuỳ chọn. Trả { url } (data: URL nếu b64).
   async function generateImage(rsv, prompt, opts = {}) {
-    if (!rsv) throw new Error('Chưa gắn provider cho nhóm "Tạo / sửa ảnh". Vào Cài đặt → Provider.')
+    if (!rsv) throw new Error($i18n.t('engine.noProviderImage'))
     const { baseUrl, apiKey, model, headers, provider } = rsv
     const kind = provider?.kind || 'openai'
     const refs = (opts.images || []).filter(Boolean)
@@ -66,7 +67,7 @@ export function useProviderClient() {
       if (refs[0]) body.image_url = refs[0]
       const data = await _postJson(`${baseUrl}/${model || 'fal-ai/flux/dev'}`, { Authorization: `Key ${apiKey}`, ...headers }, body)
       const url = data?.images?.[0]?.url || data?.image?.url
-      if (!url) throw new Error('fal không trả ảnh')
+      if (!url) throw new Error($i18n.t('engine.falNoImage'))
       return { url }
     }
 
@@ -76,7 +77,7 @@ export function useProviderClient() {
       const url = `${baseUrl}/models/${model || 'gemini-2.5-flash-image'}:generateContent?key=${encodeURIComponent(apiKey)}`
       const data = await _postJson(url, headers, { contents: [{ role: 'user', parts }] })
       const img = (data.candidates?.[0]?.content?.parts || []).find((p) => p.inlineData?.data)
-      if (!img) throw new Error('Provider không trả ảnh')
+      if (!img) throw new Error($i18n.t('engine.providerNoImage'))
       return { url: `data:${img.inlineData.mimeType || 'image/png'};base64,${img.inlineData.data}` }
     }
 
@@ -89,7 +90,7 @@ export function useProviderClient() {
       form.append('image[]', await _toBlob(refs[0]))
       const res = await fetch(`${baseUrl}/images/edits`, { method: 'POST', headers: { ..._bearer(apiKey), ...headers }, body: form })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(`${res.status}: ${data?.error?.message || 'images/edits lỗi'}`)
+      if (!res.ok) throw new Error(`${res.status}: ${data?.error?.message || $i18n.t('engine.imageEditsFailed')}`)
       return { url: _imgFromOpenAI(data) }
     }
     const data = await _postJson(`${baseUrl}/images/generations`, { ..._bearer(apiKey), ...headers },
@@ -99,10 +100,10 @@ export function useProviderClient() {
 
   function _imgFromOpenAI(data) {
     const d = data?.data?.[0]
-    if (!d) throw new Error('Provider không trả ảnh')
+    if (!d) throw new Error($i18n.t('engine.providerNoImage'))
     if (d.b64_json) return `data:image/png;base64,${d.b64_json}`
     if (d.url) return d.url
-    throw new Error('Ảnh không hợp lệ')
+    throw new Error($i18n.t('engine.invalidImage'))
   }
   function _geminiInline(u) {
     const m = /^data:([^;]+);base64,(.+)$/.exec(u || '')
@@ -115,14 +116,14 @@ export function useProviderClient() {
 
   // ── VIDEO ── (Gemini Veo: text/ảnh → video, long-running → poll). openai-compatible: best-effort /videos.
   async function generateVideo(rsv, prompt, opts = {}) {
-    if (!rsv) throw new Error('Chưa gắn provider cho nhóm "Video". Vào Cài đặt → Provider.')
+    if (!rsv) throw new Error($i18n.t('engine.noProviderVideo'))
     const { baseUrl, apiKey, model, headers, provider } = rsv
     const kind = provider?.kind || 'openai'
     const onProgress = opts.onProgress || (() => {})
 
     // fal.ai — Kling / Runway / Luma / Minimax / Veo qua 1 API. POST {baseUrl}/{model}, auth "Key <key>".
     if (kind === 'fal' || /fal\.run/.test(baseUrl)) {
-      onProgress('Đang tạo video qua fal.ai… (có thể vài phút)')
+      onProgress($i18n.t('engine.generatingVideoFal'))
       const body = { prompt }
       if (opts.image) body.image_url = opts.image
       // Video mẫu (motion reference) — model SAO CHÉP CHUYỂN ĐỘNG (vd wan-animate, runway act-two, live-portrait) đọc qua video_url.
@@ -132,7 +133,7 @@ export function useProviderClient() {
       if (opts.resolution) body.resolution = opts.resolution
       const data = await _postJson(`${baseUrl}/${model || 'fal-ai/kling-video/v2/master/image-to-video'}`, { Authorization: `Key ${apiKey}`, ...headers }, body)
       const url = data?.video?.url || data?.videos?.[0]?.url
-      if (!url) throw new Error('fal không trả video')
+      if (!url) throw new Error($i18n.t('engine.falNoVideo'))
       return { url }
     }
 
@@ -143,23 +144,23 @@ export function useProviderClient() {
       const start = await _postJson(`${baseUrl}/models/${veo}:predictLongRunning?key=${encodeURIComponent(apiKey)}`, headers,
         { instances: [instance], parameters: { aspectRatio: opts.aspectRatio || '16:9' } })
       let op = start.name
-      if (!op) throw new Error('Veo không trả operation')
+      if (!op) throw new Error($i18n.t('engine.veoNoOperation'))
       // poll tối đa ~4 phút
       for (let i = 0; i < 80; i++) {
         await new Promise((r) => setTimeout(r, 3000))
         const st = await _getJson(`${baseUrl}/${op}?key=${encodeURIComponent(apiKey)}`, headers)
-        onProgress(`Đang tạo video… (${i * 3}s)`)
+        onProgress($i18n.t('engine.generatingVideoElapsed', { seconds: i * 3 }))
         if (st.done) {
           const v = st.response?.generateVideoResponse?.generatedSamples?.[0]?.video
             || st.response?.videos?.[0] || st.response?.predictions?.[0]
           const uri = v?.uri || v?.video?.uri
-          if (!uri) throw new Error('Veo xong nhưng không có video URI')
+          if (!uri) throw new Error($i18n.t('engine.veoNoUri'))
           // URI Veo cần key để tải → trả kèm key (FE-only).
           return { url: uri.includes('key=') ? uri : `${uri}${uri.includes('?') ? '&' : '?'}key=${encodeURIComponent(apiKey)}` }
         }
-        if (st.error) throw new Error(st.error.message || 'Veo lỗi')
+        if (st.error) throw new Error(st.error.message || $i18n.t('engine.veoFailed'))
       }
-      throw new Error('Veo quá thời gian chờ')
+      throw new Error($i18n.t('engine.veoTimeout'))
     }
 
     // openai-compatible best-effort (vd nhà cung cấp clone Sora/Runway theo chuẩn /videos)
@@ -169,12 +170,12 @@ export function useProviderClient() {
       const url = data?.data?.[0]?.url || data?.url
       if (url) return { url }
     } catch (e) { /* fallthrough */ }
-    throw new Error('Provider không hỗ trợ tạo video. Dùng Gemini (Veo) cho nhóm Video.')
+    throw new Error($i18n.t('engine.providerNoVideoSupport'))
   }
 
   // ── SPEECH (TTS) ── text → audio (data: URL). voice = id giọng của provider (đã bỏ tiền tố provider:).
   async function generateSpeech(rsv, text, opts = {}) {
-    if (!rsv) throw new Error('Chưa gắn provider cho nhóm "Giọng nói". Vào Cài đặt → Provider.')
+    if (!rsv) throw new Error($i18n.t('engine.noProviderSpeech'))
     const { baseUrl, apiKey, model, headers, provider } = rsv
     const kind = provider?.kind || 'openai'
     const voice = String(opts.voice || '').replace(/^[a-z]+:/i, '').trim()   // bỏ 'gemini:'/'openai:'... còn id thuần
@@ -186,7 +187,7 @@ export function useProviderClient() {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey, ...headers },
         body: JSON.stringify({ text, model_id: model || 'eleven_multilingual_v2' })
       })
-      if (!res.ok) throw new Error(`${res.status}: ElevenLabs TTS lỗi`)
+      if (!res.ok) throw new Error(`${res.status}: ${$i18n.t('engine.elevenlabsTtsFailed')}`)
       return { url: await _blobToDataUrl(await res.blob()) }
     }
 
@@ -195,20 +196,20 @@ export function useProviderClient() {
       const data = await _postJson(`${baseUrl}/models/${model || 'gemini-2.5-flash-preview-tts'}:generateContent?key=${encodeURIComponent(apiKey)}`, headers,
         { contents: [{ parts: [{ text }] }], generationConfig: { responseModalities: ['AUDIO'], speechConfig } })
       const a = (data.candidates?.[0]?.content?.parts || []).find((p) => p.inlineData?.data)
-      if (!a) throw new Error('TTS không trả audio')
+      if (!a) throw new Error($i18n.t('engine.ttsNoAudio'))
       return { url: `data:${a.inlineData.mimeType || 'audio/wav'};base64,${a.inlineData.data}` }
     }
     // openai /audio/speech → binary
     const res = await fetch(`${baseUrl}/audio/speech`, { method: 'POST', headers: { 'Content-Type': 'application/json', ..._bearer(apiKey), ...headers },
       body: JSON.stringify({ model: model || 'gpt-4o-mini-tts', voice: voice || 'alloy', input: text }) })
-    if (!res.ok) throw new Error(`${res.status}: TTS lỗi`)
+    if (!res.ok) throw new Error(`${res.status}: ${$i18n.t('engine.ttsFailed')}`)
     const blob = await res.blob()
     return { url: await _blobToDataUrl(blob) }
   }
 
   // ── TRANSCRIPTION (ASR) ── audio/video URL → text.
   async function transcribe(rsv, mediaUrl, opts = {}) {
-    if (!rsv) throw new Error('Chưa gắn provider cho nhóm "Nhận dạng / phụ đề". Vào Cài đặt → Provider.')
+    if (!rsv) throw new Error($i18n.t('engine.noProviderTranscription'))
     const { baseUrl, apiKey, model, headers } = rsv
     const blob = await _toBlob(mediaUrl)
     const form = new FormData()
@@ -217,14 +218,14 @@ export function useProviderClient() {
     if (opts.translate) form.append('response_format', 'json')
     const res = await fetch(`${baseUrl}/audio/transcriptions`, { method: 'POST', headers: { ..._bearer(apiKey), ...headers }, body: form })
     const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(`${res.status}: ${data?.error?.message || 'ASR lỗi'}`)
+    if (!res.ok) throw new Error(`${res.status}: ${data?.error?.message || $i18n.t('engine.asrFailed')}`)
     return { text: data.text || '' }
   }
 
   async function _getJson(url, headers) {
     const res = await fetch(url, { headers })
     const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(`${res.status}: ${data?.error?.message || 'GET lỗi'}`)
+    if (!res.ok) throw new Error(`${res.status}: ${data?.error?.message || $i18n.t('engine.getFailed')}`)
     return data
   }
   function _blobToDataUrl(blob) {

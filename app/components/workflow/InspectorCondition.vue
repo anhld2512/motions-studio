@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-3">
     <div>
-      <label class="apl-label">Expression (JS)</label>
+      <label class="apl-label">{{ t('inspector.condition.expressionLabel') }}</label>
       <textarea v-model="local.expression" rows="2" class="apl-input mt-1.5 font-mono" placeholder="text.length > 100" />
-      <p class="apl-hint">Có sẵn <code>text</code> (string) + <code>metadata</code> (object) từ node trước.</p>
+      <p class="apl-hint">{{ t('inspector.condition.expressionHintPrefix') }} <code>text</code> (string) + <code>metadata</code> {{ t('inspector.condition.expressionHintSuffix') }}</p>
     </div>
 
     <div class="apl-info-card">
-      <p class="font-semibold mb-1">Ví dụ:</p>
+      <p class="font-semibold mb-1">{{ t('inspector.condition.examples') }}</p>
       <ul class="space-y-1 list-disc list-inside">
         <li><code>text.length > 100</code></li>
         <li><code>text.includes("hóa đơn")</code></li>
@@ -17,14 +17,15 @@
     </div>
 
     <div class="apl-warn-card">
-      <p class="font-semibold"><i class="bi bi-info-circle mr-1" />Wire 2 nhánh</p>
-      <p class="mt-0.5">Từ node này có 2 output handle: <b class="text-emerald-700">TRUE</b> (trên) và <b class="text-rose-700">FALSE</b> (dưới). Nối mỗi handle sang 1 node để engine pick branch tương ứng.</p>
+      <p class="font-semibold"><i class="bi bi-info-circle mr-1" />{{ t('inspector.condition.wireTitle') }}</p>
+      <p class="mt-0.5">{{ t('inspector.condition.wirePrefix') }} <b class="text-emerald-700">TRUE</b> ({{ t('inspector.condition.wireTop') }}) {{ t('inspector.condition.wireAnd') }} <b class="text-rose-700">FALSE</b> ({{ t('inspector.condition.wireBottom') }}). {{ t('inspector.condition.wireSuffix') }}</p>
     </div>
   </div>
 </template>
 <script setup>
 const props = defineProps({ config: { type: Object, required: true } })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 const local = reactive({ expression: props.config.expression || 'text.length > 0' })
 watch(local, (v) => emit('update:config', { ...v }), { deep: true })
 </script>

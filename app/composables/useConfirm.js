@@ -21,13 +21,14 @@ export function useConfirm() {
   }))
 
   function ask(opts = {}) {
+    const { $i18n } = useNuxtApp()
     return new Promise((resolve) => {
       state.value = {
         open: true,
-        title: opts.title || 'Xác nhận',
+        title: opts.title || $i18n.t('confirm.defaultTitle'),
         message: opts.message || '',
-        confirmText: opts.confirmText || 'Xác nhận',
-        cancelText: opts.cancelText || 'Huỷ',
+        confirmText: opts.confirmText || $i18n.t('confirm.defaultConfirm'),
+        cancelText: opts.cancelText || $i18n.t('confirm.defaultCancel'),
         variant: opts.variant || 'primary',
         resolver: resolve
       }

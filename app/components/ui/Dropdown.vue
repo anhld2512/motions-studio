@@ -10,7 +10,7 @@
     >
       <i v-if="icon" :class="['bi text-sm flex-shrink-0', icon]" />
       <span :class="cn('truncate', fullWidth ? 'flex-1 text-left' : 'max-w-32')">
-        {{ active ? displayLabel : placeholder }}
+        {{ active ? displayLabel : placeholderText }}
       </span>
       <i
         v-if="active && clearable && !noClear"
@@ -48,7 +48,7 @@
               ref="searchRef"
               v-model="query"
               type="text"
-              placeholder="Tìm kiếm…"
+              :placeholder="t('ui.searchPlaceholder')"
               class="flex-1 min-w-0 bg-transparent outline-none text-xs text-gray-700 placeholder:text-gray-400"
             />
             <button
@@ -76,12 +76,12 @@
           >
             <i v-if="!modelValue" class="bi bi-check2 text-primary text-xs flex-shrink-0" />
             <span v-else class="w-4 flex-shrink-0" />
-            <span class="truncate">Tất cả</span>
+            <span class="truncate">{{ t('ui.all') }}</span>
           </button>
           <!-- #endregion -->
 
           <div v-if="!filtered.length" class="px-3 py-3 text-xs text-gray-400 italic text-center">
-            Không có kết quả
+            {{ t('ui.noResults') }}
           </div>
 
           <button
@@ -130,7 +130,7 @@
             @click="selectAllVisible"
           >
             <i class="bi bi-check2-all mr-1" />
-            {{ query.trim() ? 'Chọn các kết quả' : 'Chọn tất cả' }}
+            {{ query.trim() ? t('ui.selectResults') : t('ui.selectAll') }}
           </button>
           <button
             type="button"
@@ -144,7 +144,7 @@
             @click="clear"
           >
             <i class="bi bi-x-circle mr-1" />
-            Xoá ({{ valueArr.length }})
+            {{ t('ui.clearCount', { count: valueArr.length }) }}
           </button>
         </div>
         <!-- #endregion -->
@@ -156,10 +156,11 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const props = defineProps({
   modelValue: { type: [String, Number, Array], default: '' },
   options: { type: Array, required: true },
-  placeholder: { type: String, default: 'Chọn…' },
+  placeholder: { type: String, default: '' },
   multiple: { type: Boolean, default: false },
   clearable: { type: Boolean, default: true },
   disabled: { type: Boolean, default: false },
@@ -216,6 +217,8 @@ const valueArr = computed(() =>
   props.multiple ? (Array.isArray(props.modelValue) ? props.modelValue : []) : []
 )
 
+const placeholderText = computed(() => props.placeholder || t('ui.selectPlaceholder'))
+
 const selectedSet = computed(() => new Set(valueArr.value))
 
 const active = computed(() =>
@@ -229,10 +232,10 @@ const displayLabel = computed(() => {
       const found = props.options.find((o) => o.value === valueArr.value[0])
       return found?.label ?? valueArr.value[0]
     }
-    return `${valueArr.value.length} đã chọn`
+    return t('ui.selectedCount', { count: valueArr.value.length })
   }
   const found = props.options.find((o) => o.value === props.modelValue)
-  return found?.label ?? props.modelValue ?? props.placeholder
+  return found?.label ?? props.modelValue ?? placeholderText.value
 })
 // #endregion
 

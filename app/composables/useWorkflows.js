@@ -154,8 +154,21 @@ export function useWorkflows() {
     if (!import.meta.client) return
     if (localStorage.getItem(SEED_FLAG)) return   // seed 1 lần (xoá rồi thì không tạo lại)
     localStorage.setItem(SEED_FLAG, '1')
-    for (const s of STARTERS) await create(s)
+    const { $i18n } = useNuxtApp()
+    for (const s of STARTERS) {
+      await create({
+        ...s,
+        name: $i18n.t(`starters.${_starterKey(s.slug)}Name`),
+        description: $i18n.t(`starters.${_starterKey(s.slug)}Desc`)
+      })
+    }
   }
+  // map slug → camelCase i18n key prefix (giữ slug literal, chỉ dịch name/description)
+  const _starterKey = (slug) => ({
+    'tao-anh': 'taoAnh',
+    'motion-control': 'motionControl',
+    'thay-do-motion': 'thayDoMotion'
+  })[slug] || slug
   // #endregion
 
   return { items, loading, load, get, create, update, remove, invoke, test, listRuns, getRun, getAsset, seedStarters }

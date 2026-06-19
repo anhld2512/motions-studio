@@ -5,7 +5,7 @@
   <div class="flex flex-col gap-1 flex-1 min-h-0">
     <label class="text-[11px] font-bold text-gray-700 flex items-center gap-1 flex-shrink-0">
       <i v-if="icon" :class="['bi', icon, accentTextClass]" />
-      {{ label }}
+      {{ labelText }}
       <span v-if="optional" class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide ml-1">
         · {{ t('upload.optional') }}
       </span>
@@ -55,7 +55,7 @@
           v-if="isImage"
           :src="previewUrl"
           class="w-full h-full object-cover"
-          :alt="label"
+          :alt="labelText"
         />
         <video
           v-else-if="isVideo"
@@ -94,7 +94,7 @@
 const { t } = useI18n()
 const props = defineProps({
   modelValue: { type: File, default: null },
-  label:       { type: String,  default: 'Upload file' },
+  label:       { type: String,  default: '' },
   icon:        { type: String,  default: '' },
   hint:        { type: String,  default: '' },
   accept:      { type: String,  default: 'image/*' },
@@ -108,6 +108,8 @@ const inputRef = ref(null)
 const dragging = ref(false)
 const dragCount = ref(0)
 const previewUrl = ref('')
+
+const labelText = computed(() => props.label || t('ui.uploadFile'))
 
 const isImage = computed(() => props.modelValue?.type?.startsWith('image/'))
 const isVideo = computed(() => props.modelValue?.type?.startsWith('video/'))

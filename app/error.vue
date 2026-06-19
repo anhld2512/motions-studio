@@ -37,7 +37,7 @@
           @click="onHome"
         >
           <i class="bi bi-house-door" />
-          Về trang chủ
+          {{ t('errorPage.home') }}
         </button>
         <button
           type="button"
@@ -45,14 +45,14 @@
           @click="onReload"
         >
           <i class="bi bi-arrow-clockwise" />
-          Thử lại
+          {{ t('errorPage.retry') }}
         </button>
       </div>
 
       <!-- Diagnostic detail (dev mode only) -->
       <details v-if="showDetail && props.error?.message" class="mt-5 text-left">
         <summary class="text-xs font-semibold text-gray-500 cursor-pointer hover:text-gray-700">
-          Chi tiết kỹ thuật
+          {{ t('errorPage.technicalDetail') }}
         </summary>
         <pre class="mt-2 text-[0.7rem] text-gray-600 bg-white/60 border border-gray-200/60 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap break-words">{{ props.error?.message }}</pre>
       </details>
@@ -63,10 +63,11 @@
 
 <script setup>
 // #region ALD 20/05/2026 - Nuxt error layout — không cần định nghĩa layout vì error.vue là root render
+const { t } = useI18n()
 const props = defineProps({ error: Object })
 
 useHead({
-  title: () => `${props.error?.statusCode ?? 'Lỗi'} — Local AI`
+  title: () => `${props.error?.statusCode ?? t('errorPage.errorWord')} — Local AI`
 })
 
 // #region ALD 20/05/2026 - Map status code → tiêu đề + icon + màu
@@ -74,20 +75,20 @@ const statusCode = computed(() => props.error?.statusCode ?? 500)
 
 const statusTitle = computed(() => {
   const c = statusCode.value
-  if (c === 404) return 'Không tìm thấy trang'
-  if (c === 401) return 'Bạn cần đăng nhập'
-  if (c === 403) return 'Không có quyền truy cập'
-  if (c === 503) return 'Dịch vụ tạm thời ngừng'
-  return 'Có lỗi xảy ra'
+  if (c === 404) return t('errorPage.title404')
+  if (c === 401) return t('errorPage.title401')
+  if (c === 403) return t('errorPage.title403')
+  if (c === 503) return t('errorPage.title503')
+  return t('errorPage.titleDefault')
 })
 
 const statusMessage = computed(() => {
   const c = statusCode.value
-  if (c === 404) return 'Trang bạn cần không tồn tại hoặc đã được di chuyển.'
-  if (c === 401) return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
-  if (c === 403) return 'Liên hệ admin nếu bạn cho rằng đây là nhầm lẫn.'
-  if (c === 503) return 'Hệ thống đang bảo trì. Vui lòng quay lại sau ít phút.'
-  return props.error?.statusMessage || props.error?.message || 'Đã có lỗi không xác định.'
+  if (c === 404) return t('errorPage.message404')
+  if (c === 401) return t('errorPage.message401')
+  if (c === 403) return t('errorPage.message403')
+  if (c === 503) return t('errorPage.message503')
+  return props.error?.statusMessage || props.error?.message || t('errorPage.messageDefault')
 })
 
 const iconName = computed(() => {

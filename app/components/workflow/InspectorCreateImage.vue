@@ -47,11 +47,11 @@ const props = defineProps({
 const emit = defineEmits(['update:config'])
 const { t } = useI18n()
 
-const ASPECTS = [
-  { value: 'auto', label: 'Tự động' }, { value: '1:1', label: 'Vuông 1:1' },
-  { value: '16:9', label: 'Ngang 16:9' }, { value: '9:16', label: 'Dọc 9:16' },
+const ASPECTS = computed(() => [
+  { value: 'auto', label: t('inspector.createImage.aspectAuto') }, { value: '1:1', label: t('inspector.createImage.aspectSquare') },
+  { value: '16:9', label: t('inspector.createImage.aspectLandscape') }, { value: '9:16', label: t('inspector.createImage.aspectPortrait') },
   { value: '4:3', label: '4:3' }, { value: '3:4', label: '3:4' }
-]
+])
 
 const local = ref({ prompt: '', negativePrompt: '', inputCount: 0, aspectRatio: 'auto', ...props.config })
 const inputCount = computed(() => Math.max(0, Math.min(6, Number(local.value.inputCount) || 0)))

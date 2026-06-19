@@ -5,7 +5,7 @@
     <button
       type="button"
       :class="['apl-noti-bell', noti.unreadCount.value > 0 && 'has-unread']"
-      :title="noti.unreadCount.value > 0 ? `${noti.unreadCount.value} thông báo mới` : 'Thông báo'"
+      :title="noti.unreadCount.value > 0 ? t('notify.unreadCount', { count: noti.unreadCount.value }) : t('notify.title')"
       @click="togglePanel"
     >
       <i :class="['bi', noti.unreadCount.value > 0 ? 'bi-bell-fill' : 'bi-bell']" />
@@ -19,19 +19,19 @@
         <div class="apl-noti-header">
           <span class="apl-noti-title">
             <i class="bi bi-bell-fill text-primary" />
-            Thông báo
+            {{ t('notify.title') }}
           </span>
-          <button v-if="noti.unreadCount.value > 0" type="button" class="apl-noti-action" @click="noti.markAllRead()" title="Đánh dấu đã đọc">
+          <button v-if="noti.unreadCount.value > 0" type="button" class="apl-noti-action" @click="noti.markAllRead()" :title="t('notify.markAllRead')">
             <i class="bi bi-check2-all" />
           </button>
-          <button v-if="noti.items.value.length" type="button" class="apl-noti-action" @click="onClear" title="Xoá tất cả">
+          <button v-if="noti.items.value.length" type="button" class="apl-noti-action" @click="onClear" :title="t('notify.clearAll')">
             <i class="bi bi-trash" />
           </button>
         </div>
 
         <div v-if="noti.items.value.length === 0" class="apl-noti-empty">
           <i class="bi bi-bell-slash text-slate-300 text-3xl" />
-          <p class="text-xs text-slate-400 mt-2">Chưa có thông báo</p>
+          <p class="text-xs text-slate-400 mt-2">{{ t('notify.empty') }}</p>
         </div>
 
         <ul v-else class="apl-noti-list">
@@ -48,7 +48,7 @@
               <div v-if="n.body" class="apl-noti-row-body">{{ n.body }}</div>
               <div class="apl-noti-row-meta">{{ fmtAgo(n.ts) }}</div>
             </div>
-            <button type="button" class="apl-noti-remove" @click.stop="noti.remove(n.id)" title="Xoá">
+            <button type="button" class="apl-noti-remove" @click.stop="noti.remove(n.id)" :title="t('notify.remove')">
               <i class="bi bi-x" />
             </button>
           </li>
@@ -60,6 +60,7 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const noti = useNotifications()
 const router = useRouter()
 
@@ -72,10 +73,10 @@ function closePanel() {
 }
 async function onClear() {
   const ok = await useConfirm().ask({
-    title: 'Xoá tất cả thông báo?',
-    message: 'Sẽ xoá vĩnh viễn toàn bộ danh sách. Không khôi phục được.',
-    confirmText: 'Xoá',
-    cancelText: 'Huỷ',
+    title: t('notify.clearConfirmTitle'),
+    message: t('notify.clearConfirmMessage'),
+    confirmText: t('notify.clearConfirmText'),
+    cancelText: t('notify.clearCancelText'),
     variant: 'danger',
   })
   if (ok) noti.clear()
@@ -95,9 +96,9 @@ function iconFor(kind) {
 }
 function fmtAgo(ts) {
   const diff = Math.floor((Date.now() - ts) / 1000)
-  if (diff < 60) return 'vừa xong'
-  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`
+  if (diff < 60) return t('notify.justNow')
+  if (diff < 3600) return t('notify.minutesAgo', { n: Math.floor(diff / 60) })
+  if (diff < 86400) return t('notify.hoursAgo', { n: Math.floor(diff / 3600) })
   return new Date(ts).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 

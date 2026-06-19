@@ -61,7 +61,7 @@ const mode = ref('pick')         // 'pick' | 'new'
 const saving = ref(false)
 const form = reactive({ kind: 'openai', name: '', baseUrl: '', apiKey: '' })
 
-const capLabel = computed(() => prov.CAPABILITIES.find((c) => c.id === props.capability)?.label || props.capability)
+const capLabel = computed(() => t(`cap.${props.capability}.label`))
 const binding = computed(() => bindings.value?.[props.capability] || null)
 const bound = computed(() => binding.value ? providers.value.find((p) => p.id === binding.value.providerId) || null : null)
 const curModel = computed(() => binding.value?.model || bound.value?.models?.[props.capability] || '')

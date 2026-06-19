@@ -13,10 +13,10 @@
       </div>
       <div class="relative text-white">
         <h1 class="text-5xl font-black leading-tight tracking-tight">
-          Trợ lý AI<br />nội bộ 
+          {{ t('login.brandLine1') }}<br />{{ t('login.brandLine2') }}
         </h1>
         <p class="text-blue-50 mt-5 max-w-md text-lg">
-          Đăng nhập bằng email công ty, hệ thống sẽ gửi mã OTP 6 chữ số.
+          {{ t('login.brandSubtitle') }}
         </p>
       </div>
       <div class="relative text-xs text-blue-200">
@@ -33,17 +33,17 @@
             <img :src="appConfig.app.logoIcon" alt="" class="h-full w-full object-cover" />
           </div>
           <h2 class="text-2xl font-bold text-gray-900">
-            {{ step === 'email' ? 'Đăng nhập' : 'Nhập mã xác thực' }}
+            {{ step === 'email' ? t('login.headingEmail') : t('login.headingOtp') }}
           </h2>
           <p class="text-sm text-gray-500 mt-1">
-            {{ step === 'email' ? 'Sử dụng email' : `Mã được gửi tới ${email}` }}
+            {{ step === 'email' ? t('login.subtitleEmail') : t('login.subtitleOtp', { email }) }}
           </p>
         </div>
 
         <!-- Step 1: email -->
         <form v-if="step === 'email'" class="space-y-4" @submit.prevent="onRequestOtp">
           <label class="block">
-            <span class="text-xs font-semibold text-gray-700">Email</span>
+            <span class="text-xs font-semibold text-gray-700">{{ t('login.emailLabel') }}</span>
             <UiInput
               v-model="email"
               type="email"
@@ -70,7 +70,7 @@
             class="w-full"
             :disabled="!email.trim()"
           >
-            {{ loading ? 'Đang gửi…' : 'Gửi mã xác thực' }}
+            {{ loading ? t('login.sending') : t('login.sendCode') }}
             <i v-if="!loading" class="bi bi-arrow-right" />
           </UiButton>
         </form>
@@ -100,7 +100,7 @@
             @click="onVerifyOtp"
           >
             <i v-if="!loading" class="bi bi-shield-check" />
-            {{ loading ? 'Đang xác thực…' : 'Đăng nhập' }}
+            {{ loading ? t('login.verifying') : t('login.signIn') }}
           </UiButton>
 
           <div class="flex items-center justify-between text-xs text-gray-500">
@@ -110,7 +110,7 @@
               @click="backToEmail"
             >
               <i class="bi bi-arrow-left" />
-              Đổi email
+              {{ t('login.changeEmail') }}
             </button>
             <button
               type="button"
@@ -118,13 +118,13 @@
               :disabled="countdown > 0 || loading"
               @click="onResend"
             >
-              {{ countdown > 0 ? `Gửi lại sau ${countdown}s` : 'Gửi lại mã' }}
+              {{ countdown > 0 ? t('login.resendIn', { seconds: countdown }) : t('login.resend') }}
             </button>
           </div>
         </div>
 
         <p class="text-xs text-gray-500 text-center mt-6">
-          Có vấn đề? Liên hệ IT Helpdesk Pebsteel.
+          {{ t('login.helpdesk') }}
         </p>
       </div>
     </div>
@@ -135,6 +135,7 @@
 <script setup>
 definePageMeta({ layout: false })
 
+const { t } = useI18n()
 const appConfig = useAppConfig()
 const route = useRoute()
 const auth = useAuth()
@@ -147,7 +148,7 @@ const loading = ref(false)
 const countdown = ref(0)
 let countdownTimer = null
 
-useHead({ title: 'Đăng nhập — Local AI' })
+useHead({ title: `${t('login.headingEmail')} — Local AI` })
 
 // #region ALD 20/05/2026 - Countdown 60s cho nút Resend
 function startCountdown(sec = 60) {
@@ -172,7 +173,7 @@ async function onRequestOtp() {
   errorMsg.value = ''
   const e = email.value.trim().toLowerCase()
   if (!EMAIL_RE.test(e)) {
-    errorMsg.value = 'Email không hợp lệ.'
+    errorMsg.value = t('login.errInvalidEmail')
     return
   }
   loading.value = true
@@ -185,13 +186,13 @@ async function onRequestOtp() {
     const data = err?.data ?? err?.response?._data
     const errCode = data?.code
     if (errCode === 'USER_NOT_FOUND') {
-      errorMsg.value = 'Email chưa được đăng ký. Liên hệ admin để cấp quyền.'
+      errorMsg.value = t('login.errUserNotFound')
     } else if (errCode === 'ACCOUNT_INACTIVE') {
-      errorMsg.value = 'Tài khoản đã bị khóa. Liên hệ quản trị viên.'
+      errorMsg.value = t('login.errAccountInactive')
     } else if (errCode === 'RATE_LIMITED') {
-      errorMsg.value = 'Quá nhiều yêu cầu. Vui lòng thử lại sau 1 giờ.'
+      errorMsg.value = t('login.errRateLimited')
     } else {
-      errorMsg.value = data?.error || 'Không gửi được mã. Vui lòng thử lại.'
+      errorMsg.value = data?.error || t('login.errSendFailed')
     }
   } finally {
     loading.value = false
@@ -214,14 +215,14 @@ async function onVerifyOtp() {
     const data = err?.data ?? err?.response?._data
     const errCode = data?.code
     if (errCode === 'OTP_EXPIRED') {
-      errorMsg.value = 'Mã đã hết hạn. Bấm "Gửi lại mã".'
+      errorMsg.value = t('login.errOtpExpired')
     } else if (errCode === 'OTP_INVALID') {
-      errorMsg.value = 'Mã không đúng. Vui lòng kiểm tra lại.'
+      errorMsg.value = t('login.errOtpInvalid')
     } else if (errCode === 'ACCOUNT_INACTIVE') {
-      errorMsg.value = 'Tài khoản đã bị khóa.'
+      errorMsg.value = t('login.errAccountLocked')
       step.value = 'email'
     } else {
-      errorMsg.value = data?.error || 'Không xác thực được. Vui lòng thử lại.'
+      errorMsg.value = data?.error || t('login.errVerifyFailed')
     }
     code.value = ''
   } finally {
@@ -240,7 +241,7 @@ async function onResend() {
     startCountdown()
   } catch (err) {
     const data = err?.data ?? err?.response?._data
-    errorMsg.value = data?.error || 'Không gửi lại được mã.'
+    errorMsg.value = data?.error || t('login.errResendFailed')
   } finally {
     loading.value = false
   }

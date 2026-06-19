@@ -7,6 +7,7 @@
 // "chưa hỗ trợ" rồi cho qua để run vẫn hoàn tất. Tiện cho enduser: bấm Test là thấy node chạy + ra ảnh.
 
 export function useWorkflowEngine() {
+  const { $i18n } = useNuxtApp()
   const db = useLocalDb()
   const providers = useProviders()
   const client = useProviderClient()
@@ -100,7 +101,7 @@ export function useWorkflowEngine() {
           if (ct === 'text') out = { kind: 'text', text: c.staticText ?? input[c.field || 'text'] ?? '' }
           else { const url = c.staticUrl || c.staticData || c.url || input[c.field || ct] || ''; out = { kind: ct, url } }
           outputs.set(node.id, out)
-          await emit(node.id, 'success', `Input ${ct}`)
+          await emit(node.id, 'success', $i18n.t('engine.inputReady', { type: ct }))
           continue
         }
         if (type === 'output') {
@@ -113,18 +114,18 @@ export function useWorkflowEngine() {
           if (aud) outputMeta = { ...outputMeta, audio: aud.url }
           if (txt) { outputMeta = { ...outputMeta, text: txt }; runRec.output = { ...(runRec.output || {}), text: txt } }
           outputs.set(node.id, vid || img || aud || { kind: 'text', text: txt })
-          await emit(node.id, 'success', 'Kết quả đã sẵn sàng')
+          await emit(node.id, 'success', $i18n.t('engine.resultReady'))
           continue
         }
         if (type === 'debug' || type === 'validate' || type === 'gpu-warmup' || type === 'gpu-free' || type === 'concat') {
           outputs.set(node.id, g.list[0] || { kind: 'text', text: '' })
-          await emit(node.id, 'success', 'Bỏ qua (node tiện ích)')
+          await emit(node.id, 'success', $i18n.t('engine.skippedUtility'))
           continue
         }
 
         // ── TEXT ──
         if (cap === 'text') {
-          await emit(node.id, 'info', 'Đang gọi LLM…')
+          await emit(node.id, 'info', $i18n.t('engine.callingLlm'))
           const rsv = await providers.resolve('text')
           const sys = c.systemPrompt || c.prompt || ''
           const userText = textFrom(g) || c.prompt || ''
@@ -133,26 +134,26 @@ export function useWorkflowEngine() {
             { role: 'user', content: userText || 'Xin chào' }
           ], { temperature: c.temperature })
           outputs.set(node.id, { kind: 'text', text })
-          await emit(node.id, 'success', text.slice(0, 80) || 'Xong')
+          await emit(node.id, 'success', text.slice(0, 80) || $i18n.t('engine.done'))
           continue
         }
 
         // ── IMAGE (create-image / tryon / compose) ──
         if (cap === 'image') {
-          await emit(node.id, 'info', 'Đang tạo ảnh…')
+          await emit(node.id, 'info', $i18n.t('engine.generatingImage'))
           const rsv = await providers.resolve('image')
           const refs = await Promise.all(imageUrlsFrom(g).map((u) => fileStore.toSendable(u)))
           const prompt = _imagePrompt(type, c, textFrom(g))
           const { url } = await client.generateImage(rsv, prompt, { images: refs, size: c.size })
           const stored = await fileStore.putFile(url, { prefix: 'image', contentType: 'image/png' })
           outputs.set(node.id, { kind: 'image', url: stored })
-          await emit(node.id, 'success', 'Đã tạo ảnh', { previewUrl: stored, previewKind: 'image' })
+          await emit(node.id, 'success', $i18n.t('engine.imageCreated'), { previewUrl: stored, previewKind: 'image' })
           continue
         }
 
         // ── VIDEO (motion / ss / wan-i2v / text-to-video / fashion-motion / teaser / bds) ──
         if (cap === 'video') {
-          await emit(node.id, 'info', 'Đang tạo video… (có thể vài phút)')
+          await emit(node.id, 'info', $i18n.t('engine.generatingVideo'))
           const rsv = await providers.resolve('video')
           const refs = await Promise.all(imageUrlsFrom(g).map((u) => fileStore.toSendable(u)))
           // Video mẫu (motion reference) — node Motion Transfer dùng để SAO CHÉP chuyển động.
@@ -166,36 +167,36 @@ export function useWorkflowEngine() {
           })
           const stored = await fileStore.putFile(url, { prefix: 'video', contentType: 'video/mp4' })
           outputs.set(node.id, { kind: 'video', url: stored })
-          await emit(node.id, 'success', 'Đã tạo video', { previewUrl: stored, previewKind: 'video' })
+          await emit(node.id, 'success', $i18n.t('engine.videoCreated'), { previewUrl: stored, previewKind: 'video' })
           continue
         }
 
         // ── SPEECH (talk / voiceover) — TTS ──
         if (cap === 'speech') {
-          await emit(node.id, 'info', 'Đang tạo giọng nói…')
+          await emit(node.id, 'info', $i18n.t('engine.generatingSpeech'))
           const rsv = await providers.resolve('speech')
           const text = (c.line || c.script || c.text || textFrom(g) || '').trim()
-          if (!text) { await emit(node.id, 'warn', 'Không có lời để đọc — bỏ qua.'); outputs.set(node.id, g.list[0] || { kind: 'text', text: '' }); continue }
+          if (!text) { await emit(node.id, 'warn', $i18n.t('engine.noTextToSpeak')); outputs.set(node.id, g.list[0] || { kind: 'text', text: '' }); continue }
           const { url } = await client.generateSpeech(rsv, text, { voice: c.voice })
           const stored = await fileStore.putFile(url, { prefix: 'audio', contentType: 'audio/mpeg' })
           outputs.set(node.id, { kind: 'audio', url: stored })
-          await emit(node.id, 'success', 'Đã tạo giọng nói')
+          await emit(node.id, 'success', $i18n.t('engine.speechCreated'))
           continue
         }
 
         // ── TRANSCRIPTION (subtitle) — ASR (+ dịch tuỳ chọn qua nhóm text) ──
         if (cap === 'transcription') {
-          await emit(node.id, 'info', 'Đang nhận dạng lời thoại…')
+          await emit(node.id, 'info', $i18n.t('engine.transcribing'))
           const rsv = await providers.resolve('transcription')
           const media = g.list.find((o) => (o.kind === 'video' || o.kind === 'audio') && o.url)?.url
-          if (!media) { await emit(node.id, 'warn', 'Không có audio/video đầu vào — bỏ qua.'); outputs.set(node.id, { kind: 'text', text: '' }); continue }
+          if (!media) { await emit(node.id, 'warn', $i18n.t('engine.noMediaInput')); outputs.set(node.id, { kind: 'text', text: '' }); continue }
           let { text } = await client.transcribe(rsv, media)
           if (c.targetLang && c.mode !== 'subtitle-only') {
             try {
               const trsv = await providers.resolve('text')
               const r = await client.chat(trsv, [{ role: 'user', content: `Dịch sang ${c.targetLang}, chỉ trả bản dịch:\n\n${text}` }])
               text = r.text || text
-            } catch (e) { await emit(node.id, 'warn', 'Bỏ qua dịch: ' + (e?.message || e)) }
+            } catch (e) { await emit(node.id, 'warn', $i18n.t('engine.translationSkipped', { error: (e?.message || e) })) }
           }
           outputs.set(node.id, { kind: 'text', text })
           await emit(node.id, 'success', (text || '').slice(0, 80) || 'Xong')
@@ -204,16 +205,16 @@ export function useWorkflowEngine() {
 
         // ── Không có provider (node luồng lạ) → cho qua ──
         if (cap) {
-          await emit(node.id, 'warn', `Nhóm "${cap}" chưa cấu hình provider. Bỏ qua node.`)
+          await emit(node.id, 'warn', $i18n.t('engine.capNoProvider', { cap }))
         } else {
-          await emit(node.id, 'warn', `Node "${type}" không có provider — bỏ qua.`)
+          await emit(node.id, 'warn', $i18n.t('engine.nodeNoProvider', { type }))
         }
         outputs.set(node.id, g.list[0] || { kind: 'text', text: '' })
       }
       // editor poll dừng khi status === 'success' (KHÔNG phải 'done').
       await _save('success')
     } catch (e) {
-      events.push({ ts: new Date().toISOString(), level: 'error', msg: 'Lỗi: ' + (e?.message || e) })
+      events.push({ ts: new Date().toISOString(), level: 'error', msg: $i18n.t('engine.runError', { error: (e?.message || e) }) })
       await _save('error')
     }
   }

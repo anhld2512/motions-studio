@@ -34,7 +34,7 @@
         <button
           type="button"
           class="h-9 w-9 flex items-center justify-center rounded-2xl text-gray-500 hover:bg-white/70 press"
-          title="Đóng"
+          :title="t('layout.close')"
           @click="sidebarOpen = false"
         >
           <i class="bi bi-x text-xl" />
@@ -49,7 +49,7 @@
           @click="onNewWorkflow"
         >
           <i class="bi bi-plus-circle" />
-          {{ t('Workflow mới', 'New workflow') }}
+          {{ t('layout.newWorkflow') }}
         </button>
       </div>
 
@@ -88,7 +88,7 @@
               {{ userEmail }}
             </div>
             <div class="text-[0.7rem] text-gray-500 truncate">
-              {{ isAdmin ? 'Admin' : 'Thành viên' }}
+              {{ isAdmin ? t('layout.roleAdmin') : t('layout.roleMember') }}
             </div>
           </div>
           <i :class="['bi text-gray-400 text-xs', userMenuOpen ? 'bi-chevron-down' : 'bi-chevron-up']" />
@@ -110,7 +110,7 @@
               @click="userMenuOpen = false; sidebarOpen = false"
             >
               <i class="bi bi-gear text-base" />
-              {{ t('Cài đặt', 'Settings') }}
+              {{ t('layout.settings') }}
             </NuxtLink>
             <button
               type="button"
@@ -118,7 +118,7 @@
               @click="onLogout"
             >
               <i class="bi bi-box-arrow-right text-base" />
-              {{ t('Đăng xuất', 'Log out') }}
+              {{ t('layout.logout') }}
             </button>
           </div>
         </Transition>
@@ -132,7 +132,7 @@
         <button
           type="button"
           class="h-10 w-10 flex items-center justify-center rounded-2xl glass shadow-card press hover:bg-white transition-colors flex-shrink-0"
-          :title="sidebarOpen ? 'Đóng sidebar' : 'Mở sidebar'"
+          :title="sidebarOpen ? t('layout.closeSidebar') : t('layout.openSidebar')"
           @click="sidebarOpen = !sidebarOpen"
         >
           <i class="bi bi-layout-sidebar-inset text-xl text-gray-700" />
@@ -182,7 +182,8 @@ import { useStorage } from '@vueuse/core'
 const route = useRoute()
 const appConfig = useAppConfig()
 const auth = useAuth()
-const { lang, t, toggle } = useLang()
+const { lang, toggle } = useLang()
+const { t } = useI18n()
 
 // Sidebar default closed; persist user choice qua reload
 const sidebarOpen = useStorage('motions_sidebar_open', false)
@@ -210,19 +211,19 @@ const pageTitle = computed(() => {
   if (meta) return meta
   const item = visibleNavItems.value.find((n) => isActive(n.to))
   if (item && item.to !== '/') return lang.value === 'en' ? item.en : item.label
-  if (route.path.startsWith('/workflows/')) return t('Trình tạo workflow', 'Workflow editor')
+  if (route.path.startsWith('/workflows/')) return t('layout.workflowEditor')
   return 'Motions Studio'
 })
 
 const pageSubtitle = computed(() => {
   const sub = route.meta?.subtitle
   if (sub) return sub
-  if (route.path === '/')           return t('Quản lý workflows AI', 'Manage AI workflows')
-  if (route.path === '/workflows')  return t('Tất cả workflows', 'All workflows')
-  if (route.path === '/monitor')    return t('Job đang chạy', 'Live jobs')
-  if (route.path === '/reports')    return t('Tổng quan hoạt động', 'Activity overview')
-  if (route.path === '/settings')   return t('Provider & dữ liệu', 'Providers & data')
-  if (route.path.startsWith('/workflows/')) return t('Thiết kế graph', 'Design graph')
+  if (route.path === '/')           return t('layout.subtitleHome')
+  if (route.path === '/workflows')  return t('layout.subtitleWorkflows')
+  if (route.path === '/monitor')    return t('layout.subtitleMonitor')
+  if (route.path === '/reports')    return t('layout.subtitleReports')
+  if (route.path === '/settings')   return t('layout.subtitleSettings')
+  if (route.path.startsWith('/workflows/')) return t('layout.subtitleWorkflowEditor')
   return ''
 })
 // #endregion

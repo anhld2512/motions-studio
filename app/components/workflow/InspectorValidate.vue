@@ -1,73 +1,74 @@
 <template>
   <div class="space-y-3">
     <div class="apl-info-card">
-      <p class="font-semibold mb-1"><i class="bi bi-check2-square text-emerald-600 mr-1" /> Validate</p>
-      <p>Parse JSON từ <code>prev.text</code> + check required fields + math rules. Pass-through metadata <code>validation</code>.</p>
+      <p class="font-semibold mb-1"><i class="bi bi-check2-square text-emerald-600 mr-1" /> {{ t('inspector.validate.title') }}</p>
+      <p>{{ t('inspector.validate.intro') }} <code>prev.text</code> + check required fields + math rules. {{ t('inspector.validate.introMeta') }} <code>validation</code>.</p>
     </div>
 
     <!-- Strict mode -->
     <label class="apl-check-row">
       <input v-model="local.strict" type="checkbox" class="apl-checkbox" />
       <span>
-        <span class="apl-check-label">Strict mode</span>
-        <span class="apl-check-hint">Fail → throw error, workflow dừng. Tắt → warn-only, vẫn pass output.</span>
+        <span class="apl-check-label">{{ t('inspector.validate.strictMode') }}</span>
+        <span class="apl-check-hint">{{ t('inspector.validate.strictHint') }}</span>
       </span>
     </label>
 
     <!-- Required fields -->
     <div>
       <div class="flex items-center justify-between mb-1">
-        <label class="apl-label">Required fields <span class="apl-mute">(dot-path)</span></label>
-        <button type="button" class="apl-mini-btn" @click="addField"><i class="bi bi-plus-lg" /> Thêm</button>
+        <label class="apl-label">{{ t('inspector.validate.requiredFields') }} <span class="apl-mute">{{ t('inspector.validate.dotPath') }}</span></label>
+        <button type="button" class="apl-mini-btn" @click="addField"><i class="bi bi-plus-lg" /> {{ t('inspector.validate.add') }}</button>
       </div>
       <div class="space-y-1.5">
         <div v-for="(_, idx) in local.required_fields" :key="`f-${idx}`" class="apl-row">
           <input v-model="local.required_fields[idx]" type="text" class="apl-input font-mono text-[12px]" placeholder="invoice.no" />
           <button type="button" class="apl-icon-btn-mini" @click="local.required_fields.splice(idx, 1)"><i class="bi bi-x-lg" /></button>
         </div>
-        <p v-if="local.required_fields.length === 0" class="apl-empty-list">Chưa có field — workflow chỉ check math.</p>
+        <p v-if="local.required_fields.length === 0" class="apl-empty-list">{{ t('inspector.validate.noFields') }}</p>
       </div>
     </div>
 
     <!-- Math checks -->
     <div>
       <div class="flex items-center justify-between mb-1">
-        <label class="apl-label">Math checks</label>
-        <button type="button" class="apl-mini-btn" @click="addMath"><i class="bi bi-plus-lg" /> Thêm</button>
+        <label class="apl-label">{{ t('inspector.validate.mathChecks') }}</label>
+        <button type="button" class="apl-mini-btn" @click="addMath"><i class="bi bi-plus-lg" /> {{ t('inspector.validate.add') }}</button>
       </div>
       <div class="space-y-2">
         <div v-for="(m, idx) in local.math_checks" :key="`m-${idx}`" class="apl-math-card">
           <div class="flex items-center gap-1">
-            <input v-model="m.name" type="text" class="apl-input apl-name-input text-[11.5px]" placeholder="Tên check..." />
+            <input v-model="m.name" type="text" class="apl-input apl-name-input text-[11.5px]" :placeholder="t('inspector.validate.checkNamePlaceholder')" />
             <button type="button" class="apl-icon-btn-mini" @click="local.math_checks.splice(idx, 1)"><i class="bi bi-x-lg" /></button>
           </div>
-          <label class="apl-sub-label mt-1">Formula (JS, access via <code>data.field</code>)</label>
+          <label class="apl-sub-label mt-1">{{ t('inspector.validate.formula') }} <code>data.field</code>)</label>
           <input v-model="m.formula" type="text" class="apl-input mt-0.5 font-mono text-[11px]" placeholder="data.totals.base * 0.08" />
           <div class="flex items-center gap-2 mt-1">
             <div class="flex-1">
-              <label class="apl-sub-label">Expected path</label>
+              <label class="apl-sub-label">{{ t('inspector.validate.expectedPath') }}</label>
               <input v-model="m.expected_path" type="text" class="apl-input mt-0.5 font-mono text-[11px]" placeholder="totals.vat" />
             </div>
             <div class="w-20">
-              <label class="apl-sub-label">Tolerance ±</label>
+              <label class="apl-sub-label">{{ t('inspector.validate.tolerance') }}</label>
               <input v-model.number="m.tolerance" type="number" min="0" step="0.5" class="apl-input mt-0.5 font-mono text-[11px]" />
             </div>
           </div>
         </div>
-        <p v-if="local.math_checks.length === 0" class="apl-empty-list">Chưa có math check.</p>
+        <p v-if="local.math_checks.length === 0" class="apl-empty-list">{{ t('inspector.validate.noMathChecks') }}</p>
       </div>
     </div>
 
     <div class="apl-tip-card">
-      <p class="font-semibold mb-1"><i class="bi bi-lightbulb mr-1" /> Ví dụ hóa đơn VAT</p>
-      <p>Required: <code>invoice_no</code>, <code>seller.tax_id</code>, <code>totals.total_amount</code></p>
-      <p>Math: <code>data.totals.total_before_vat * data.totals.vat_rate / 100</code> = <code>totals.vat_amount</code></p>
+      <p class="font-semibold mb-1"><i class="bi bi-lightbulb mr-1" /> {{ t('inspector.validate.exampleTitle') }}</p>
+      <p>{{ t('inspector.validate.exampleRequired') }} <code>invoice_no</code>, <code>seller.tax_id</code>, <code>totals.total_amount</code></p>
+      <p>{{ t('inspector.validate.exampleMath') }} <code>data.totals.total_before_vat * data.totals.vat_rate / 100</code> = <code>totals.vat_amount</code></p>
     </div>
   </div>
 </template>
 <script setup>
 const props = defineProps({ config: { type: Object, required: true } })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 const local = reactive({
   required_fields: Array.isArray(props.config.required_fields) ? [...props.config.required_fields] : [],
   math_checks: Array.isArray(props.config.math_checks)

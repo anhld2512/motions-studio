@@ -20,8 +20,8 @@
                 <i :class="['bi text-sm', cap.icon]" />
               </span>
               <div class="min-w-0 flex-1">
-                <div class="text-[13px] font-bold text-gray-900 leading-tight">{{ cap.label }}</div>
-                <div class="text-[10.5px] text-gray-400 truncate">{{ cap.hint }}</div>
+                <div class="text-[13px] font-bold text-gray-900 leading-tight">{{ t(`cap.${cap.id}.label`) }}</div>
+                <div class="text-[10.5px] text-gray-400 truncate">{{ t(`cap.${cap.id}.hint`) }}</div>
               </div>
             </div>
             <UiDropdown

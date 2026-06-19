@@ -4,24 +4,24 @@
        Copy API URL ngay tại đây. -->
   <div class="space-y-3">
     <div class="flex items-center justify-between gap-2">
-      <p class="text-xs text-gray-500">{{ wf.items.value.length }} workflow</p>
+      <p class="text-xs text-gray-500">{{ t('workflowsTab.countLabel', { count: wf.items.value.length }) }}</p>
       <button
         type="button"
         class="press inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-primary text-white text-xs font-bold shadow-pill hover:bg-primary-dark"
         @click="showCreate = true"
       >
         <i class="bi bi-plus-lg" />
-        Tạo workflow
+        {{ t('workflowsTab.createButton') }}
       </button>
     </div>
 
     <div v-if="wf.loading.value" class="text-center text-xs text-gray-400 py-8">
-      <i class="bi bi-hourglass-split animate-pulse mr-1" /> Đang tải...
+      <i class="bi bi-hourglass-split animate-pulse mr-1" /> {{ t('workflowsTab.loading') }}
     </div>
     <div v-else-if="!wf.items.value.length" class="text-center py-12 glass shadow-card rounded-3xl">
       <i class="bi bi-diagram-3 text-5xl text-gray-300" />
-      <p class="text-sm text-gray-500 mt-3">Chưa có workflow nào.</p>
-      <p class="text-xs text-gray-400 mt-1">Tạo flow đầu tiên — vd <code>/price-matrix</code> = <code>/ocr</code> → <code>/chat</code>.</p>
+      <p class="text-sm text-gray-500 mt-3">{{ t('workflowsTab.emptyTitle') }}</p>
+      <p class="text-xs text-gray-400 mt-1">{{ t('workflowsTab.emptyHintBefore') }} <code>/price-matrix</code> = <code>/ocr</code> → <code>/chat</code>.</p>
     </div>
     <!-- ALD 24/05/2026 - Card v3 Apple polish: equal-height grid via min-h, large hero
          action row at footer, secondary actions on hover-revealed top-right menu. -->
@@ -38,7 +38,7 @@
             v-if="w.owned"
             type="button"
             class="apl-wf-tool"
-            title="Sửa graph"
+            :title="t('workflowsTab.editGraph')"
             @click="navigateTo(`/workflows/${w.id}`)"
           >
             <i class="bi bi-pencil" />
@@ -47,7 +47,7 @@
             v-if="w.owned"
             type="button"
             class="apl-wf-tool"
-            title="Lịch sử run"
+            :title="t('workflowsTab.runHistory')"
             @click="navigateTo(`/workflows/${w.id}/runs`)"
           >
             <i class="bi bi-clock-history" />
@@ -56,7 +56,7 @@
             v-if="w.owned"
             type="button"
             class="apl-wf-tool apl-wf-tool-danger"
-            title="Xoá"
+            :title="t('workflowsTab.delete')"
             @click="onDelete(w)"
           >
             <i class="bi bi-trash" />
@@ -67,22 +67,22 @@
         <div class="apl-wf-head">
           <div class="apl-wf-slug-row">
             <code class="apl-wf-slug">/{{ w.slug }}</code>
-            <span v-if="!w.owned" class="apl-wf-badge apl-wf-badge-public">Public</span>
-            <span v-if="!w.is_active" class="apl-wf-badge apl-wf-badge-disabled">Disabled</span>
+            <span v-if="!w.owned" class="apl-wf-badge apl-wf-badge-public">{{ t('workflowsTab.badgePublic') }}</span>
+            <span v-if="!w.is_active" class="apl-wf-badge apl-wf-badge-disabled">{{ t('workflowsTab.badgeDisabled') }}</span>
           </div>
           <h3 class="apl-wf-title">{{ w.name }}</h3>
-          <p class="apl-wf-desc">{{ w.description || '— Chưa có mô tả' }}</p>
+          <p class="apl-wf-desc">{{ w.description || t('workflowsTab.noDescription') }}</p>
         </div>
 
         <!-- Footer: hero action -->
         <button
           type="button"
           class="apl-wf-run"
-          title="Mở editor + chạy workflow"
+          :title="t('workflowsTab.openEditorRun')"
           @click.stop="navigateTo(`/workflows/${w.id}`)"
         >
           <i class="bi bi-play-fill" />
-          <span>Chạy workflow</span>
+          <span>{{ t('workflowsTab.runWorkflow') }}</span>
           <i class="bi bi-arrow-right ms-auto" />
         </button>
       </article>
@@ -92,29 +92,29 @@
     <Transition enter-active-class="transition duration-200" leave-active-class="transition duration-150" enter-from-class="opacity-0" leave-to-class="opacity-0">
       <div v-if="showCreate" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" @click.self="showCreate = false">
         <div class="bg-white rounded-3xl shadow-island-lg max-w-md w-full p-5 space-y-3">
-          <h2 class="text-lg font-bold text-gray-900">Tạo workflow mới</h2>
+          <h2 class="text-lg font-bold text-gray-900">{{ t('workflowsTab.modalTitle') }}</h2>
           <div>
-            <label class="text-[11px] font-bold text-gray-600 uppercase">Slug (URL command)</label>
+            <label class="text-[11px] font-bold text-gray-600 uppercase">{{ t('workflowsTab.slugLabel') }}</label>
             <div class="mt-1 flex items-center gap-1.5">
               <span class="text-sm font-mono text-gray-400">/</span>
               <input v-model="newWf.slug" type="text" placeholder="price-matrix" class="flex-1 px-3 py-2 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-mono focus:outline-none focus:border-primary" @input="onSlugInput" />
             </div>
-            <p class="text-[11px] text-gray-400 mt-1">a-z, 0-9, -. Dùng làm /command trong chat và API endpoint.</p>
+            <p class="text-[11px] text-gray-400 mt-1">{{ t('workflowsTab.slugHint') }}</p>
           </div>
           <div>
-            <label class="text-[11px] font-bold text-gray-600 uppercase">Tên hiển thị</label>
-            <input v-model="newWf.name" type="text" placeholder="Trích xuất bảng giá hợp đồng" class="mt-1 w-full px-3 py-2 rounded-2xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary" />
+            <label class="text-[11px] font-bold text-gray-600 uppercase">{{ t('workflowsTab.nameLabel') }}</label>
+            <input v-model="newWf.name" type="text" :placeholder="t('workflowsTab.namePlaceholder')" class="mt-1 w-full px-3 py-2 rounded-2xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary" />
           </div>
           <div>
-            <label class="text-[11px] font-bold text-gray-600 uppercase">Mô tả (optional)</label>
+            <label class="text-[11px] font-bold text-gray-600 uppercase">{{ t('workflowsTab.descLabel') }}</label>
             <textarea v-model="newWf.description" rows="2" class="mt-1 w-full px-3 py-2 rounded-2xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary" />
           </div>
           <p v-if="errorMsg" class="text-xs text-rose-600">{{ errorMsg }}</p>
           <div class="flex items-center justify-end gap-2 pt-1">
-            <button type="button" class="press h-9 px-4 rounded-full text-sm font-semibold text-gray-600 hover:bg-gray-100" @click="showCreate = false">Huỷ</button>
+            <button type="button" class="press h-9 px-4 rounded-full text-sm font-semibold text-gray-600 hover:bg-gray-100" @click="showCreate = false">{{ t('workflowsTab.cancel') }}</button>
             <button type="button" :disabled="creating || !newWf.slug || !newWf.name" class="press inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-primary text-white text-sm font-bold disabled:opacity-50" @click="onCreate">
               <i :class="['bi', creating ? 'bi-hourglass-split animate-pulse' : 'bi-check2']" />
-              Tạo
+              {{ t('workflowsTab.create') }}
             </button>
           </div>
         </div>
@@ -125,6 +125,7 @@
 </template>
 
 <script setup>
+const { t } = useI18n()
 const wf = useWorkflows()
 const toast = useToast()
 const confirmDialog = useConfirm()
@@ -148,7 +149,7 @@ async function onCreate() {
     const created = await wf.create({ slug: newWf.slug, name: newWf.name, description: newWf.description })
     showCreate.value = false
     newWf.slug = ''; newWf.name = ''; newWf.description = ''
-    toast.success(`Đã tạo /${created.slug}`)
+    toast.success(t('workflowsTab.toastCreated', { slug: created.slug }))
     navigateTo(`/workflows/${created.id}`)
   } catch (err) {
     errorMsg.value = err.data?.error || err.message
@@ -159,21 +160,21 @@ async function onCreate() {
 
 async function onDelete(w) {
   const ok = await confirmDialog.ask({
-    title: `Xoá workflow /${w.slug}?`,
-    message: 'Lịch sử run + endpoint API sẽ bị xoá.',
-    confirmText: 'Xoá',
+    title: t('workflowsTab.deleteConfirmTitle', { slug: w.slug }),
+    message: t('workflowsTab.deleteConfirmMessage'),
+    confirmText: t('workflowsTab.delete'),
     variant: 'danger'
   })
   if (!ok) return
   await wf.remove(w.id)
-  toast.success('Đã xoá')
+  toast.success(t('workflowsTab.toastDeleted'))
 }
 
 function onCopyApi(w) {
   const url = `${config.public.motionBackendUrl}/functions/v1/workflows/${w.slug}/invoke`
   navigator.clipboard.writeText(url).then(
-    () => toast.success('Đã copy API URL'),
-    () => toast.error('Copy failed')
+    () => toast.success(t('workflowsTab.toastApiCopied')),
+    () => toast.error(t('workflowsTab.toastCopyFailed'))
   )
 }
 </script>

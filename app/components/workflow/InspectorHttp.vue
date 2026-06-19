@@ -11,7 +11,7 @@
         </select>
         <input v-model="local.url" type="text" placeholder="https://api.example.com/path" class="apl-input flex-1 font-mono text-[12px]" />
       </div>
-      <p class="apl-field-hint">Hỗ trợ <code v-pre>{{text}}</code> + <code v-pre>{{metadata.key}}</code></p>
+      <p class="apl-field-hint">{{ t('inspector.http.urlHintSupport') }} <code v-pre>{{text}}</code> + <code v-pre>{{metadata.key}}</code></p>
     </div>
 
     <!-- Headers -->
@@ -19,10 +19,10 @@
       <div class="flex items-center justify-between">
         <label class="apl-field-label">Headers</label>
         <button type="button" class="apl-mini-btn" @click="addHeader">
-          <i class="bi bi-plus" /> Thêm
+          <i class="bi bi-plus" /> {{ t('inspector.http.add') }}
         </button>
       </div>
-      <div v-if="headerEntries.length === 0" class="apl-empty-row">Chưa có header.</div>
+      <div v-if="headerEntries.length === 0" class="apl-empty-row">{{ t('inspector.http.noHeaders') }}</div>
       <div v-else class="space-y-1.5 mt-1.5">
         <div v-for="(h, idx) in headerEntries" :key="idx" class="flex items-center gap-1">
           <input v-model="h.key" type="text" placeholder="Key" class="apl-input flex-1 font-mono text-[11px]" @input="syncHeaders" />
@@ -30,7 +30,7 @@
           <button type="button" class="apl-icon-btn-mini" @click="removeHeader(idx)"><i class="bi bi-x-lg" /></button>
         </div>
       </div>
-      <p class="apl-field-hint mt-1">Vd: <code v-pre>Authorization: Bearer {{metadata.token}}</code></p>
+      <p class="apl-field-hint mt-1">{{ t('inspector.http.headerExample') }} <code v-pre>Authorization: Bearer {{metadata.token}}</code></p>
     </div>
 
     <!-- Body (chỉ cho non-GET) -->
@@ -43,22 +43,22 @@
         placeholder='{"text": "{{text}}"}'
         class="apl-input font-mono text-[11px] mt-1.5"
       />
-      <p class="apl-field-hint">JSON hoặc plain text. Template <code v-pre>{{text}}</code> sẽ replace với output node trước.</p>
+      <p class="apl-field-hint">{{ t('inspector.http.bodyHint') }} <code v-pre>{{text}}</code> {{ t('inspector.http.bodyHintReplace') }}</p>
     </div>
 
     <!-- Timeout -->
     <div>
-      <label class="apl-field-label">Timeout (ms)</label>
+      <label class="apl-field-label">{{ t('inspector.http.timeout') }}</label>
       <input v-model.number="local.timeout" type="number" min="1000" max="120000" step="1000" class="apl-input mt-1.5" />
     </div>
 
     <!-- Tip -->
     <div class="apl-info-card">
-      <p class="font-semibold">Output node này</p>
+      <p class="font-semibold">{{ t('inspector.http.outputTitle') }}</p>
       <ul class="mt-1 space-y-0.5 list-disc list-inside">
         <li><code>output.text</code> = response body (string)</li>
         <li><code>output.metadata.status</code> = HTTP status</li>
-        <li><code>output.metadata.json</code> = parsed JSON (nếu response là JSON)</li>
+        <li><code>output.metadata.json</code> = parsed JSON ({{ t('inspector.http.ifJson') }})</li>
       </ul>
     </div>
   </div>
@@ -68,6 +68,7 @@
 <script setup>
 const props = defineProps({ config: { type: Object, required: true } })
 const emit = defineEmits(['update:config'])
+const { t } = useI18n()
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']
 
