@@ -129,6 +129,15 @@ export function useProviderClient() {
       // Video mẫu (motion reference) — model SAO CHÉP CHUYỂN ĐỘNG (vd wan-animate, runway act-two, live-portrait) đọc qua video_url.
       if (opts.motionVideo) { body.video_url = opts.motionVideo; body.driving_video_url = opts.motionVideo }
       if (opts.duration) body.duration = String(opts.duration)
+      if (opts.preset) body.preset = opts.preset
+      if (opts.driverStartSec != null) {
+        body.driver_start_sec = Number(opts.driverStartSec) || 0
+        body.start_time = Number(opts.driverStartSec) || 0
+      }
+      if (opts.driverDurSec != null) {
+        body.driver_dur_sec = Number(opts.driverDurSec) || 0
+        body.duration = String(Number(opts.driverDurSec) || opts.duration || 5)
+      }
       if (opts.aspectRatio) body.aspect_ratio = opts.aspectRatio
       if (opts.resolution) body.resolution = opts.resolution
       const data = await _postJson(`${baseUrl}/${model || 'fal-ai/kling-video/v2/master/image-to-video'}`, { Authorization: `Key ${apiKey}`, ...headers }, body)

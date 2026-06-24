@@ -106,18 +106,26 @@ export function useWorkflowEngine() {
         }
         if (type === 'output') {
           const vid = g.list.find((o) => o.kind === 'video' && o.url)
+          const videoList = g.list.find((o) => o.kind === 'video-list' && Array.isArray(o.videos))
           const img = g.list.find((o) => o.kind === 'image' && o.url)
           const aud = g.list.find((o) => o.kind === 'audio' && o.url)
           const txt = textFrom(g)
+          if (videoList) outputMeta = { ...outputMeta, video: videoList.videos[0]?.url, videos: videoList.videos }
           if (vid) outputMeta = { ...outputMeta, video: vid.url, videos: [{ url: vid.url }] }
           if (img) outputMeta = { ...outputMeta, image: img.url, images: [{ url: img.url }] }
           if (aud) outputMeta = { ...outputMeta, audio: aud.url }
           if (txt) { outputMeta = { ...outputMeta, text: txt }; runRec.output = { ...(runRec.output || {}), text: txt } }
-          outputs.set(node.id, vid || img || aud || { kind: 'text', text: txt })
+          outputs.set(node.id, videoList || vid || img || aud || { kind: 'text', text: txt })
           await emit(node.id, 'success', $i18n.t('engine.resultReady'))
           continue
         }
-        if (type === 'debug' || type === 'validate' || type === 'gpu-warmup' || type === 'gpu-free' || type === 'concat') {
+        if (type === 'concat') {
+          const videos = g.list.filter((o) => o.kind === 'video' && o.url).map((o) => ({ url: o.url }))
+          outputs.set(node.id, videos.length ? { kind: 'video-list', videos } : (g.list[0] || { kind: 'text', text: '' }))
+          await emit(node.id, 'success', $i18n.t('engine.skippedUtility'))
+          continue
+        }
+        if (type === 'debug' || type === 'validate' || type === 'gpu-warmup' || type === 'gpu-free') {
           outputs.set(node.id, g.list[0] || { kind: 'text', text: '' })
           await emit(node.id, 'success', $i18n.t('engine.skippedUtility'))
           continue
@@ -163,6 +171,9 @@ export function useWorkflowEngine() {
           const { url } = await client.generateVideo(rsv, prompt, {
             image: refs[0], motionVideo, aspectRatio: c.aspectRatio,
             duration: c.duration, resolution: c.resolution,
+            preset: c.preset,
+            driverStartSec: c.driverStartSec,
+            driverDurSec: c.driverDurSec,
             onProgress: (m) => emit(node.id, 'info', m)
           })
           const stored = await fileStore.putFile(url, { prefix: 'video', contentType: 'video/mp4' })

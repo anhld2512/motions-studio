@@ -102,6 +102,15 @@
             >
               <i class="bi bi-buildings" />
             </button>
+            <button
+              v-if="isOwned && !isViewingHistory"
+              type="button"
+              class="apl-icon-btn apl-icon-btn-danger"
+              :title="t('workflowsTab.delete')"
+              @click="deleteWorkflow"
+            >
+              <i class="bi bi-trash" />
+            </button>
           </div>
 
           <!-- Primary: Save + Run capsules (Apple Island style) -->
@@ -913,10 +922,8 @@ const confirmDialog = useConfirm()
 const { t } = useI18n()
 
 const workflow = ref(null)
-// ALD 27/05/2026 - Public workflow của user khác: ẩn nút Lưu + badge "Chưa lưu",
-// chỉ cho phép Chạy. BE trả `owned` flag từ GET /workflows/:id (so user_id với session).
-// Strict check === true → loading state và non-owner đều fall vào false → ẩn UI sửa đổi.
-// Owner thấy nút Lưu sau khi fetch xong (vài chục ms), không flash UX đáng kể.
+// FE-only workflows không có owner server-side; useWorkflows normalize missing owned → true.
+// Nếu sau này có shared row explicit owned=false thì editor vẫn ẩn UI sửa đổi.
 const isOwned = computed(() => workflow.value?.owned === true)
 const nodes = ref([])
 const edges = ref([])
@@ -2711,6 +2718,25 @@ async function clearTestHistory() {
     toast.success(t('editor.toastRunsDeleted', { n: deleted }))
   } catch (e) {
     toast.error(t('editor.toastDeleteFailed', { err: e?.message || e }))
+  }
+}
+
+async function deleteWorkflow() {
+  if (!workflow.value) return
+  const ok = await confirmDialog.ask({
+    title: t('workflowsTab.deleteConfirmTitle', { slug: workflow.value.slug }),
+    message: t('workflowsTab.deleteConfirmMessage'),
+    confirmText: t('workflowsTab.delete'),
+    cancelText: t('editor.cancel'),
+    variant: 'danger',
+  })
+  if (!ok) return
+  try {
+    await wf.remove(route.params.id)
+    toast.success(t('workflowsTab.toastDeleted'))
+    await navigateTo('/workflows')
+  } catch (e) {
+    toast.error(t('editor.toastDeleteFail', { err: e?.message || e }))
   }
 }
 

@@ -5,25 +5,102 @@
 // Thực thi workflow (invoke/test gọi provider thẳng từ browser) = phase "decouple" kế tiếp — tạm ghi 1 run rồi báo.
 export function useWorkflows() {
   const db = useLocalDb()
+  const auth = useAuth()
   const items = useState('workflows.items', () => [])
   const loading = useState('workflows.loading', () => false)
 
   const _uuid = () => (import.meta.client && crypto.randomUUID ? crypto.randomUUID() : 'wf_' + Math.random().toString(36).slice(2))
   const _slugify = (s) => String(s || 'workflow').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60) || 'workflow'
+  function _ownerEmail() {
+    const fromState = auth.user.value?.email
+    const fromToken = decodeJwtPayload(auth.token.value)?.email
+    return String(fromState || fromToken || 'local').trim().toLowerCase()
+  }
+  function _workflowRow(row) {
+    if (!row) return null
+    const owner = String(row.owner_email || '').trim().toLowerCase()
+    return { ...row, owned: !owner || owner === _ownerEmail() }
+  }
+  const _visibleForMe = (row) => !row?.owner_email || String(row.owner_email).trim().toLowerCase() === _ownerEmail()
+
+  function _singerDefinition() {
+    const cleanPrompt = 'Clean and normalize this model image before motion transfer: keep the same person, face, outfit, pose and full-body framing; remove artifacts, improve lighting, keep a realistic studio/fashion look.'
+    const motionPrompt = 'Apply the provided driving motion segment to the cleaned model image. Keep identity, outfit, and framing stable. Smooth realistic fashion motion, vertical 9:16.'
+    const nodes = [
+      { id: 'singer-model-1', type: 'input', position: { x: 60, y: 40 }, data: { config: { contentType: 'image', source: 'session', field: 'model1', label: 'Model 1' } } },
+      { id: 'singer-model-2', type: 'input', position: { x: 60, y: 260 }, data: { config: { contentType: 'image', source: 'session', field: 'model2', label: 'Model 2' } } },
+      { id: 'singer-model-3', type: 'input', position: { x: 60, y: 480 }, data: { config: { contentType: 'image', source: 'session', field: 'model3', label: 'Model 3' } } },
+      { id: 'singer-driver', type: 'input', position: { x: 60, y: 700 }, data: { config: { contentType: 'video', source: 'session', field: 'motion', label: 'Video motion 15s' } } },
+      { id: 'singer-tryon-1', type: 'tryon', position: { x: 390, y: 40 }, data: { config: { garmentType: 'auto', productCount: 1, prompt: cleanPrompt, _gen: 'singer', _stage: 1 } } },
+      { id: 'singer-tryon-2', type: 'tryon', position: { x: 390, y: 260 }, data: { config: { garmentType: 'auto', productCount: 1, prompt: cleanPrompt, _gen: 'singer', _stage: 2 } } },
+      { id: 'singer-tryon-3', type: 'tryon', position: { x: 390, y: 480 }, data: { config: { garmentType: 'auto', productCount: 1, prompt: cleanPrompt, _gen: 'singer', _stage: 3 } } },
+      { id: 'singer-motion-1', type: 'motion', position: { x: 720, y: 40 }, data: { config: { prompt: motionPrompt, preset: '5s-720p', aspectRatio: '9:16', duration: 5, resolution: '720p', driverStartSec: 0, driverDurSec: 5, _gen: 'singer', _stage: 1 } } },
+      { id: 'singer-motion-2', type: 'motion', position: { x: 720, y: 260 }, data: { config: { prompt: motionPrompt, preset: '5s-720p', aspectRatio: '9:16', duration: 5, resolution: '720p', driverStartSec: 5, driverDurSec: 5, _gen: 'singer', _stage: 2 } } },
+      { id: 'singer-motion-3', type: 'motion', position: { x: 720, y: 480 }, data: { config: { prompt: motionPrompt, preset: '5s-720p', aspectRatio: '9:16', duration: 5, resolution: '720p', driverStartSec: 10, driverDurSec: 5, _gen: 'singer', _stage: 3 } } },
+      { id: 'singer-concat', type: 'concat', position: { x: 1060, y: 260 }, data: { config: { clipCount: 3, transition: 'cut', fps: 25, _gen: 'singer' } } },
+      { id: 'singer-output', type: 'output', position: { x: 1400, y: 260 }, data: { config: { format: 'video', _gen: 'singer' } } }
+    ]
+    const edges = [
+      { id: 'singer-e1', source: 'singer-model-1', target: 'singer-tryon-1', targetHandle: 'model' },
+      { id: 'singer-e2', source: 'singer-model-2', target: 'singer-tryon-2', targetHandle: 'model' },
+      { id: 'singer-e3', source: 'singer-model-3', target: 'singer-tryon-3', targetHandle: 'model' },
+      { id: 'singer-e4', source: 'singer-tryon-1', target: 'singer-motion-1', targetHandle: 'image' },
+      { id: 'singer-e5', source: 'singer-tryon-2', target: 'singer-motion-2', targetHandle: 'image' },
+      { id: 'singer-e6', source: 'singer-tryon-3', target: 'singer-motion-3', targetHandle: 'image' },
+      { id: 'singer-e7', source: 'singer-driver', target: 'singer-motion-1', targetHandle: 'motion' },
+      { id: 'singer-e8', source: 'singer-driver', target: 'singer-motion-2', targetHandle: 'motion' },
+      { id: 'singer-e9', source: 'singer-driver', target: 'singer-motion-3', targetHandle: 'motion' },
+      { id: 'singer-e10', source: 'singer-motion-1', target: 'singer-concat', targetHandle: 'clip1' },
+      { id: 'singer-e11', source: 'singer-motion-2', target: 'singer-concat', targetHandle: 'clip2' },
+      { id: 'singer-e12', source: 'singer-motion-3', target: 'singer-concat', targetHandle: 'clip3' },
+      { id: 'singer-e13', source: 'singer-concat', target: 'singer-output' }
+    ]
+    return { nodes, edges }
+  }
+
+  function _needsSingerRepair(row) {
+    if (!row || String(row.slug || '').toLowerCase() !== 'singer') return false
+    const def = row.definition || {}
+    const nodes = Array.isArray(def.nodes) ? def.nodes : []
+    if (nodes.some((n) => n?.data?.config?._gen === 'singer')) return false
+    const hasWrongVideoNode = nodes.some((n) => ['ss', 'wan-i2v'].includes(n?.type))
+    const hasMotion5s = nodes.some((n) => n?.type === 'motion' && Number(n?.data?.config?.duration) === 5)
+    const tryonCount = nodes.filter((n) => n?.type === 'tryon').length
+    return hasWrongVideoNode || !hasMotion5s || tryonCount < 3
+  }
+
+  async function _repairSingerWorkflows(rows) {
+    const targets = (rows || []).filter(_needsSingerRepair)
+    if (!targets.length) return rows
+    for (const row of targets) {
+      await db.put('workflows', {
+        ...row,
+        definition: _singerDefinition(),
+        updated_at: new Date().toISOString()
+      })
+    }
+    return await db.list('workflows')
+  }
 
   async function load() {
     loading.value = true
     try {
-      const rows = await db.list('workflows')
-      items.value = (rows || []).filter((w) => w?.is_active !== false)
+      let rows = await db.list('workflows')
+      rows = await _repairSingerWorkflows(rows)
+      items.value = (rows || []).filter(_visibleForMe).map(_workflowRow).filter((w) => w?.is_active !== false)
     } finally {
       loading.value = false
     }
   }
 
   async function get(id) {
-    return await db.get('workflows', id)
+    let row = await db.get('workflows', id)
+    if (_needsSingerRepair(row)) {
+      row = { ...row, definition: _singerDefinition(), updated_at: new Date().toISOString() }
+      await db.put('workflows', row)
+    }
+    return _visibleForMe(row) ? _workflowRow(row) : null
   }
 
   // payload: { slug?, name, description?, definition?, is_active? }
@@ -35,6 +112,8 @@ export function useWorkflows() {
       description: payload.description || '',
       definition: payload.definition || { nodes: [], edges: [] },
       is_active: payload.is_active !== false,
+      owner_email: _ownerEmail(),
+      owned: true,
       created_at: new Date().toISOString()
     }
     await db.put('workflows', row)
@@ -52,6 +131,10 @@ export function useWorkflows() {
   }
 
   async function remove(id) {
+    const runs = await db.list('workflow_runs')
+    for (const r of (runs || []).filter((row) => row.workflow_id === id)) {
+      await db.remove('workflow_runs', r.id)
+    }
     await db.remove('workflows', id)
     await load()
   }

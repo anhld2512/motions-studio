@@ -14,7 +14,7 @@ const LS_COLL = 'ms.coll.'           // localStorage: 1 mảng JSON / collection
 // Schema cho Neon (idempotent). Mọi bảng dùng id text (uuid do FE sinh) + jsonb cho dữ liệu lồng.
 const SCHEMA = {
   workflows: `CREATE TABLE IF NOT EXISTS workflows (
-    id text PRIMARY KEY, slug text, name text, description text,
+    id text PRIMARY KEY, owner_email text, slug text, name text, description text,
     definition jsonb DEFAULT '{}'::jsonb, is_active boolean DEFAULT true,
     created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now()
   )`,
@@ -153,11 +153,12 @@ export function useLocalDb() {
   // Upsert tường minh theo từng bảng (cột cố định → tránh SQL injection từ key động).
   async function _neonUpsert(sql, coll, r) {
     if (coll === 'workflows') {
+      await sql('ALTER TABLE workflows ADD COLUMN IF NOT EXISTS owner_email text')
       await sql(
-        `INSERT INTO workflows (id, slug, name, description, definition, is_active, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6, now())
-         ON CONFLICT (id) DO UPDATE SET slug=$2, name=$3, description=$4, definition=$5, is_active=$6, updated_at=now()`,
-        [r.id, r.slug || '', r.name || '', r.description || '', JSON.stringify(r.definition || {}), r.is_active !== false]
+        `INSERT INTO workflows (id, owner_email, slug, name, description, definition, is_active, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7, now())
+         ON CONFLICT (id) DO UPDATE SET owner_email=$2, slug=$3, name=$4, description=$5, definition=$6, is_active=$7, updated_at=now()`,
+        [r.id, r.owner_email || null, r.slug || '', r.name || '', r.description || '', JSON.stringify(r.definition || {}), r.is_active !== false]
       )
     } else if (coll === 'workflow_runs') {
       await sql(

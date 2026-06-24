@@ -140,7 +140,15 @@ function onSlugInput() {
   newWf.slug = newWf.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
 }
 
-onMounted(() => wf.load())
+function openCreateModal() {
+  showCreate.value = true
+}
+
+onMounted(() => {
+  wf.load()
+  window.addEventListener('motions:wf:new', openCreateModal)
+})
+onBeforeUnmount(() => window.removeEventListener('motions:wf:new', openCreateModal))
 
 async function onCreate() {
   errorMsg.value = ''
